@@ -1,0 +1,787 @@
+Mood,Category,Cuisine,Food Name
+Happy,comfort,Indian,Butter Chicken
+Happy,comfort,Indian,Biryani
+Happy,comfort,Indian,Dal Makhani
+Happy,comfort,Indian,Paneer Kulcha
+Happy,comfort,Chinese,Hakka Noodles
+Happy,comfort,Chinese,Spring Rolls
+Happy,comfort,Chinese,Manchurian
+Happy,comfort,Italian,Pasta Carbonara
+Happy,comfort,Italian,Lasagna
+Happy,comfort,Italian,Risotto
+Happy,comfort,Mexican,Tacos
+Happy,comfort,Mexican,Burritos
+Happy,comfort,Mexican,Nachos
+Happy,comfort,Continental,Steak
+Happy,comfort,Continental,Fish and Chips
+Happy,comfort,Continental,Roast Chicken
+Happy,comfort,Japanese,Katsu Curry
+Happy,comfort,Japanese,Tempura
+Happy,comfort,Japanese,Udon
+Happy,healthy,Indian,Grilled Paneer Salad
+Happy,healthy,Indian,Sprouts Chaat
+Happy,healthy,Indian,Oats Idli
+Happy,healthy,Chinese,Steamed Momos
+Happy,healthy,Chinese,Clear Soup
+Happy,healthy,Chinese,Stir-fry Veggies
+Happy,healthy,Italian,Pesto Pasta
+Happy,healthy,Italian,Caprese Salad
+Happy,healthy,Italian,Vegetable Minestrone
+Happy,healthy,Mexican,Bean Salad
+Happy,healthy,Mexican,Grilled Corn
+Happy,healthy,Mexican,Veggie Bowl
+Happy,healthy,Continental,Quinoa Bowl
+Happy,healthy,Continental,Grilled Chicken Salad
+Happy,healthy,Continental,Fruit Medley
+Happy,healthy,Japanese,Sashimi
+Happy,healthy,Japanese,Miso Soup
+Happy,healthy,Japanese,Edamame
+Happy,adventurous,Indian,Laal Maas
+Happy,adventurous,Indian,Appam & Stew
+Happy,adventurous,Indian,Litti Chokha
+Happy,adventurous,Chinese,Dim Sum
+Happy,adventurous,Chinese,Peking Duck
+Happy,adventurous,Chinese,Kung Pao Chicken
+Happy,adventurous,Italian,Truffle Pasta
+Happy,adventurous,Italian,Squid Ink Risotto
+Happy,adventurous,Italian,Gnocchi
+Happy,adventurous,Mexican,Ceviche
+Happy,adventurous,Mexican,Mole Poblano
+Happy,adventurous,Mexican,Enchiladas
+Happy,adventurous,Continental,Escargot
+Happy,adventurous,Continental,Ratatouille
+Happy,adventurous,Continental,Lobster Thermidor
+Happy,adventurous,Japanese,Sushi Platter
+Happy,adventurous,Japanese,Ramen
+Happy,adventurous,Japanese,Takoyaki
+Happy,veg,Indian,Paneer Tikka
+Happy,veg,Indian,Chole Bhature
+Happy,veg,Indian,Veg Biryani
+Happy,veg,Chinese,Veg Manchurian
+Happy,veg,Chinese,Veg Chowmein
+Happy,veg,Chinese,Paneer Chilli
+Happy,veg,Italian,Margherita Pizza
+Happy,veg,Italian,Mushroom Risotto
+Happy,veg,Italian,Bruschetta
+Happy,veg,Mexican,Veggie Burrito
+Happy,veg,Mexican,Cheese Quesadilla
+Happy,veg,Mexican,Corn Tacos
+Happy,veg,Continental,Veg Au Gratin
+Happy,veg,Continental,Stuffed Mushrooms
+Happy,veg,Continental,Garden Salad
+Happy,veg,Japanese,Veg Sushi
+Happy,veg,Japanese,Tofu Tempura
+Happy,veg,Japanese,Veg Ramen
+Happy,vegan,Indian,Chana Masala
+Happy,vegan,Indian,Baingan Bharta
+Happy,vegan,Indian,Aloo Gobi
+Happy,vegan,Chinese,Vegan Dim Sum
+Happy,vegan,Chinese,Tofu Stir Fry
+Happy,vegan,Chinese,Vegan Noodles
+Happy,vegan,Italian,Vegan Pizza
+Happy,vegan,Italian,Marinara Pasta
+Happy,vegan,Italian,Minestrone
+Happy,vegan,Mexican,Jackfruit Tacos
+Happy,vegan,Mexican,Guacamole Bowl
+Happy,vegan,Mexican,Vegan Chili
+Happy,vegan,Continental,Buddha Bowl
+Happy,vegan,Continental,Lentil Soup
+Happy,vegan,Continental,Roasted Veggies
+Happy,vegan,Japanese,Cucumber Sushi
+Happy,vegan,Japanese,Seaweed Salad
+Happy,vegan,Japanese,Tofu Soup
+Happy,drinks,Sweet,Mango Lassi
+Happy,drinks,Sweet,Cold Coffee
+Happy,drinks,Sweet,Fruit Smoothie
+Happy,drinks,Sweet,Iced Tea
+Happy,drinks,Sweet,Milkshake
+Happy,drinks,Non-Sweet,Fresh Lime Soda
+Happy,drinks,Non-Sweet,Buttermilk
+Happy,drinks,Non-Sweet,Sparkling Water
+Happy,drinks,Non-Sweet,Green Tea
+Happy,drinks,Non-Sweet,Black Coffee
+Sad,comfort,Indian,Chicken Soup
+Sad,comfort,Indian,Khichdi
+Sad,comfort,Indian,Gajar Halwa
+Sad,comfort,Chinese,Wonton Soup
+Sad,comfort,Chinese,Fried Rice
+Sad,comfort,Chinese,Sweet & Sour Chicken
+Sad,comfort,Italian,Spaghetti
+Sad,comfort,Italian,Tiramisu
+Sad,comfort,Italian,Gelato
+Sad,comfort,Mexican,Churros
+Sad,comfort,Mexican,Hot Cocoa
+Sad,comfort,Mexican,Cheese Enchilada
+Sad,comfort,Continental,Chocolate Brownie
+Sad,comfort,Continental,Ice Cream Sundae
+Sad,comfort,Continental,Apple Pie
+Sad,comfort,Japanese,Mochi
+Sad,comfort,Japanese,Dorayaki
+Sad,comfort,Japanese,Hot Matcha
+Sad,healthy,Indian,Warm Turmeric Milk
+Sad,healthy,Indian,Moong Dal Soup
+Sad,healthy,Indian,Honey Lemon Water
+Sad,healthy,Chinese,Ginger Tea
+Sad,healthy,Chinese,Clear Broth
+Sad,healthy,Chinese,Steamed Fish
+Sad,healthy,Italian,Fruit Salad
+Sad,healthy,Italian,Baked Veggies
+Sad,healthy,Italian,Herb Tea
+Sad,healthy,Mexican,Oatmeal
+Sad,healthy,Mexican,Banana Bowl
+Sad,healthy,Mexican,Warm Seeds
+Sad,healthy,Continental,Dark Chocolate Oatmeal
+Sad,healthy,Continental,Banana Smoothie
+Sad,healthy,Continental,Warm Lentil Soup
+Sad,healthy,Japanese,Soft Tofu
+Sad,healthy,Japanese,Plain Congee
+Sad,healthy,Japanese,Green Tea
+Sad,adventurous,Indian,Rabri
+Sad,adventurous,Indian,Malpua
+Sad,adventurous,Indian,Shahi Tukda
+Sad,adventurous,Chinese,Bao Buns
+Sad,adventurous,Chinese,Mooncake
+Sad,adventurous,Chinese,Sago Pudding
+Sad,adventurous,Italian,Affogato
+Sad,adventurous,Italian,Cannoli
+Sad,adventurous,Italian,Panna Cotta
+Sad,adventurous,Mexican,Hot Chocolate Fondue
+Sad,adventurous,Mexican,Crepes
+Sad,adventurous,Mexican,Tres Leches
+Sad,adventurous,Continental,Soufflé
+Sad,adventurous,Continental,Profiteroles
+Sad,adventurous,Continental,Cheesecake
+Sad,adventurous,Japanese,Taiyaki
+Sad,adventurous,Japanese,Anmitsu
+Sad,adventurous,Japanese,Matcha Parfait
+Sad,veg,Indian,Aloo Paratha
+Sad,veg,Indian,Dal Tadka
+Sad,veg,Indian,Besan Ladoo
+Sad,veg,Chinese,Veg Spring Rolls
+Sad,veg,Chinese,Sweet Corn Soup
+Sad,veg,Chinese,Honey Chilli Potato
+Sad,veg,Italian,Cheese Pizza
+Sad,veg,Italian,Tomato Soup
+Sad,veg,Italian,Garlic Bread
+Sad,veg,Mexican,Veggie Nachos
+Sad,veg,Mexican,Corn Chaat
+Sad,veg,Mexican,Sweet Potato Fries
+Sad,veg,Continental,Mac & Cheese
+Sad,veg,Continental,Tomato Basil Soup
+Sad,veg,Continental,Fruit Cake
+Sad,veg,Japanese,Agedashi Tofu
+Sad,veg,Japanese,Veg Gyoza
+Sad,veg,Japanese,Sweet Potato Tempura
+Sad,vegan,Indian,Vegan Kheer
+Sad,vegan,Indian,Potato Samosa
+Sad,vegan,Indian,Fruit Chaat
+Sad,vegan,Chinese,Vegan Soup
+Sad,vegan,Chinese,Fruit Skewers
+Sad,vegan,Chinese,Coconut Milk Pudding
+Sad,vegan,Italian,Fruit Sorbet
+Sad,vegan,Italian,Vegan Pasta
+Sad,vegan,Italian,Roasted Almonds
+Sad,vegan,Mexican,Vegan Churros
+Sad,vegan,Mexican,Dark Chocolate
+Sad,vegan,Mexican,Fruit Platter
+Sad,vegan,Continental,Vegan Brownie
+Sad,vegan,Continental,Coconut Yogurt
+Sad,vegan,Continental,Chia Pudding
+Sad,vegan,Japanese,Fruit Sushi
+Sad,vegan,Japanese,Sweet Beans
+Sad,vegan,Japanese,Vegan Matcha
+Sad,drinks,Sweet,Hot Chocolate
+Sad,drinks,Sweet,Warm Milk with Honey
+Sad,drinks,Sweet,Vanilla Milkshake
+Sad,drinks,Sweet,Strawberry Lassi
+Sad,drinks,Non-Sweet,Chamomile Tea
+Sad,drinks,Non-Sweet,Warm Lemon Water
+Sad,drinks,Non-Sweet,Peppermint Tea
+Sad,drinks,Non-Sweet,Black Tea
+Stressed,comfort,Indian,Butter Naan & Dal
+Stressed,comfort,Indian,Chole Bhature
+Stressed,comfort,Indian,Rajma Chawal
+Stressed,comfort,Chinese,Spicy Noodles
+Stressed,comfort,Chinese,Schezwan Rice
+Stressed,comfort,Chinese,Crispy Chicken
+Stressed,comfort,Italian,Pepperoni Pizza
+Stressed,comfort,Italian,Lasagna
+Stressed,comfort,Italian,Pesto Pasta
+Stressed,comfort,Mexican,Chicken Tacos
+Stressed,comfort,Mexican,Burrito Grande
+Stressed,comfort,Mexican,Loaded Nachos
+Stressed,comfort,Continental,Burger & Fries
+Stressed,comfort,Continental,Fried Chicken
+Stressed,comfort,Continental,Club Sandwich
+Stressed,comfort,Japanese,Chicken Katsu
+Stressed,comfort,Japanese,Gyoza
+Stressed,comfort,Japanese,Teriyaki Chicken
+Stressed,healthy,Indian,Roasted Makhana
+Stressed,healthy,Indian,Curd Rice
+Stressed,healthy,Indian,Boiled Eggs
+Stressed,healthy,Chinese,Edamame
+Stressed,healthy,Chinese,Tofu Salad
+Stressed,healthy,Chinese,Veg Soup
+Stressed,healthy,Italian,Greek Salad
+Stressed,healthy,Italian,Baked Salmon
+Stressed,healthy,Italian,Minestrone
+Stressed,healthy,Mexican,Guacamole
+Stressed,healthy,Mexican,Corn Salad
+Stressed,healthy,Mexican,Black Bean Soup
+Stressed,healthy,Continental,Green Smoothie
+Stressed,healthy,Continental,Oatmeal
+Stressed,healthy,Continental,Mixed Nuts
+Stressed,healthy,Japanese,Miso Soup
+Stressed,healthy,Japanese,Seaweed Salad
+Stressed,healthy,Japanese,Steamed Veggies
+Stressed,adventurous,Indian,Keema Pav
+Stressed,adventurous,Indian,Nalli Nihari
+Stressed,adventurous,Indian,Fish Fry
+Stressed,adventurous,Chinese,Dim Sum
+Stressed,adventurous,Chinese,Kung Pao Shrimp
+Stressed,adventurous,Chinese,Mapo Tofu
+Stressed,adventurous,Italian,Calamari
+Stressed,adventurous,Italian,Osso Buco
+Stressed,adventurous,Italian,Gorgonzola Gnocchi
+Stressed,adventurous,Mexican,Fajitas
+Stressed,adventurous,Mexican,Mole
+Stressed,adventurous,Mexican,Chili con Carne
+Stressed,adventurous,Continental,Steak Tartare
+Stressed,adventurous,Continental,Duck Confit
+Stressed,adventurous,Continental,Escargot
+Stressed,adventurous,Japanese,Ramen
+Stressed,adventurous,Japanese,Sashimi
+Stressed,adventurous,Japanese,Unagi Bowl
+Stressed,veg,Indian,Palak Paneer
+Stressed,veg,Indian,Aloo Gobi
+Stressed,veg,Indian,Dal Fry
+Stressed,veg,Chinese,Veg Manchurian
+Stressed,veg,Chinese,Veg Chowmein
+Stressed,veg,Chinese,Spring Rolls
+Stressed,veg,Italian,Mushroom Pizza
+Stressed,veg,Italian,Pesto Pasta
+Stressed,veg,Italian,Bruschetta
+Stressed,veg,Mexican,Cheese Quesadilla
+Stressed,veg,Mexican,Veggie Taco
+Stressed,veg,Mexican,Bean Burrito
+Stressed,veg,Continental,Veggie Burger
+Stressed,veg,Continental,Pasta Alfredo
+Stressed,veg,Continental,French Fries
+Stressed,veg,Japanese,Veg Tempura
+Stressed,veg,Japanese,Tofu Ramen
+Stressed,veg,Japanese,Cucumber Roll
+Stressed,vegan,Indian,Chana Masala
+Stressed,vegan,Indian,Baingan Bharta
+Stressed,vegan,Indian,Jeera Aloo
+Stressed,vegan,Chinese,Tofu Stir Fry
+Stressed,vegan,Chinese,Vegan Momos
+Stressed,vegan,Chinese,Clear Soup
+Stressed,vegan,Italian,Vegan Pizza
+Stressed,vegan,Italian,Marinara Pasta
+Stressed,vegan,Italian,Salad
+Stressed,vegan,Mexican,Vegan Tacos
+Stressed,vegan,Mexican,Bean Salad
+Stressed,vegan,Mexican,Salsa & Chips
+Stressed,vegan,Continental,Buddha Bowl
+Stressed,vegan,Continental,Lentil Curry
+Stressed,vegan,Continental,Roasted Chickpeas
+Stressed,vegan,Japanese,Inari Sushi
+Stressed,vegan,Japanese,Vegan Ramen
+Stressed,vegan,Japanese,Seaweed
+Stressed,drinks,Sweet,Iced Tea
+Stressed,drinks,Sweet,Orange Juice
+Stressed,drinks,Sweet,Lavender Latte
+Stressed,drinks,Sweet,Fruit Punch
+Stressed,drinks,Non-Sweet,Green Tea
+Stressed,drinks,Non-Sweet,Peppermint Tea
+Stressed,drinks,Non-Sweet,Lemon Water
+Stressed,drinks,Non-Sweet,Chamomile Tea
+Angry,comfort,Indian,Spicy Vindaloo
+Angry,comfort,Indian,Mirchi Bajji
+Angry,comfort,Indian,Kolhapuri Chicken
+Angry,comfort,Chinese,Fire Ramen
+Angry,comfort,Chinese,Chilli Chicken
+Angry,comfort,Chinese,Schezwan Fish
+Angry,comfort,Italian,Arrabbiata Pasta
+Angry,comfort,Italian,Spicy Pizza
+Angry,comfort,Italian,Diavola
+Angry,comfort,Mexican,Fiery Nachos
+Angry,comfort,Mexican,Jalapeno Poppers
+Angry,comfort,Mexican,Spicy Burrito
+Angry,comfort,Continental,Spicy Wings
+Angry,comfort,Continental,Buffalo Burger
+Angry,comfort,Continental,Steak with Pepper Sauce
+Angry,comfort,Japanese,Wasabi Peas
+Angry,comfort,Japanese,Spicy Ramen
+Angry,comfort,Japanese,Karage
+Angry,healthy,Indian,Crunchy Salad
+Angry,healthy,Indian,Buttermilk
+Angry,healthy,Indian,Raw Veggies
+Angry,healthy,Chinese,Celery Salad
+Angry,healthy,Chinese,Steamed Tofu
+Angry,healthy,Chinese,Clear Broth
+Angry,healthy,Italian,Grilled Veggies
+Angry,healthy,Italian,Garden Salad
+Angry,healthy,Italian,Herbed Chicken
+Angry,healthy,Mexican,Salsa & Veggies
+Angry,healthy,Mexican,Grilled Corn
+Angry,healthy,Mexican,Black Bean Bowl
+Angry,healthy,Continental,Protein Shake
+Angry,healthy,Continental,Apple & PB
+Angry,healthy,Continental,Celery & Hummus
+Angry,healthy,Japanese,Edamame
+Angry,healthy,Japanese,Cucumber Salad
+Angry,healthy,Japanese,Tofu
+Angry,adventurous,Indian,Bhut Jolokia Curry
+Angry,adventurous,Indian,Pork Vindaloo
+Angry,adventurous,Indian,Spicy Fish
+Angry,adventurous,Chinese,Szechuan Hot Pot
+Angry,adventurous,Chinese,Kung Pao Squid
+Angry,adventurous,Chinese,Spicy Duck
+Angry,adventurous,Italian,Angry Pasta
+Angry,adventurous,Italian,Spicy Sausage
+Angry,adventurous,Italian,Nduja
+Angry,adventurous,Mexican,Habanero Tacos
+Angry,adventurous,Mexican,Chilli Rellenos
+Angry,adventurous,Mexican,Spicy Ceviche
+Angry,adventurous,Continental,Ghost Pepper Wings
+Angry,adventurous,Continental,Spicy Steak
+Angry,adventurous,Continental,Peri Peri Chicken
+Angry,adventurous,Japanese,Spicy Tuna Roll
+Angry,adventurous,Japanese,Kimchi Ramen
+Angry,adventurous,Japanese,Wasabi Sushi
+Angry,veg,Indian,Paneer Chilli
+Angry,veg,Indian,Masala Dosa
+Angry,veg,Indian,Samosa
+Angry,veg,Chinese,Veg Schezwan
+Angry,veg,Chinese,Spicy Momos
+Angry,veg,Chinese,Veg Manchurian
+Angry,veg,Italian,Veggie Arrabbiata
+Angry,veg,Italian,Spicy Mushroom Pizza
+Angry,veg,Italian,Pesto
+Angry,veg,Mexican,Spicy Veggie Wrap
+Angry,veg,Mexican,Bean Taco
+Angry,veg,Mexican,Nacho Bowl
+Angry,veg,Continental,Veggie Wings
+Angry,veg,Continental,Spicy Fries
+Angry,veg,Continental,Falafel
+Angry,veg,Japanese,Spicy Tofu
+Angry,veg,Japanese,Wasabi Veg Roll
+Angry,veg,Japanese,Veg Ramen
+Angry,vegan,Indian,Spicy Aloo Gobi
+Angry,vegan,Indian,Chana Masala
+Angry,vegan,Indian,Vegan Samosa
+Angry,vegan,Chinese,Spicy Tofu Bowl
+Angry,vegan,Chinese,Vegan Chilli
+Angry,vegan,Chinese,Vegan Noodles
+Angry,vegan,Italian,Vegan Arrabbiata
+Angry,vegan,Italian,Spicy Salad
+Angry,vegan,Italian,Bruschetta
+Angry,vegan,Mexican,Spicy Bean Tacos
+Angry,vegan,Mexican,Chipotle Bowl
+Angry,vegan,Mexican,Hot Salsa
+Angry,vegan,Continental,Spicy Hummus
+Angry,vegan,Continental,Roasted Seeds
+Angry,vegan,Continental,Vegan Chilli
+Angry,vegan,Japanese,Spicy Seaweed
+Angry,vegan,Japanese,Tofu with Wasabi
+Angry,vegan,Japanese,Vegan Ramen
+Angry,drinks,Sweet,Energy Smoothie
+Angry,drinks,Sweet,Cold Brew with Vanilla
+Angry,drinks,Sweet,Fruit Juice
+Angry,drinks,Non-Sweet,Iced Black Coffee
+Angry,drinks,Non-Sweet,Ginger Lemon Tea
+Angry,drinks,Non-Sweet,Sparkling Water
+Angry,drinks,Non-Sweet,Cold Brew
+Excited,comfort,Indian,Chicken Tikka
+Excited,comfort,Indian,Butter Naan
+Excited,comfort,Indian,Biryani
+Excited,comfort,Chinese,Hakka Noodles
+Excited,comfort,Chinese,Spring Rolls
+Excited,comfort,Chinese,Sweet & Sour Pork
+Excited,comfort,Italian,Party Pizza
+Excited,comfort,Italian,Lasagna
+Excited,comfort,Italian,Calzone
+Excited,comfort,Mexican,Loaded Nachos
+Excited,comfort,Mexican,Quesadilla
+Excited,comfort,Mexican,Taco Tray
+Excited,comfort,Continental,BBQ Ribs
+Excited,comfort,Continental,Fried Chicken
+Excited,comfort,Continental,Hot Dogs
+Excited,comfort,Japanese,Takoyaki
+Excited,comfort,Japanese,Yakitori
+Excited,comfort,Japanese,Okonomiyaki
+Excited,healthy,Indian,Fruit Platter
+Excited,healthy,Indian,Coconut Water
+Excited,healthy,Indian,Paneer Tikka
+Excited,healthy,Chinese,Steam Buns
+Excited,healthy,Chinese,Shrimp Salad
+Excited,healthy,Chinese,Fruit Medley
+Excited,healthy,Italian,Caprese Skewers
+Excited,healthy,Italian,Fruit Salad
+Excited,healthy,Italian,Smoothie
+Excited,healthy,Mexican,Fruit Tacos
+Excited,healthy,Mexican,Acai Bowl
+Excited,healthy,Mexican,Yogurt
+Excited,healthy,Continental,Protein Pancakes
+Excited,healthy,Continental,Overnight Oats
+Excited,healthy,Continental,Fruit Parfait
+Excited,healthy,Japanese,Fruit Sushi
+Excited,healthy,Japanese,Matcha Latte
+Excited,healthy,Japanese,Edamame
+Excited,adventurous,Indian,Keema Samosa
+Excited,adventurous,Indian,Fish Moilee
+Excited,adventurous,Indian,Prawn Ghee Roast
+Excited,adventurous,Chinese,Dim Sum Platter
+Excited,adventurous,Chinese,Peking Duck
+Excited,adventurous,Chinese,Hot Pot
+Excited,adventurous,Italian,Seafood Pasta
+Excited,adventurous,Italian,Truffle Pizza
+Excited,adventurous,Italian,Risotto
+Excited,adventurous,Mexican,Lobster Tacos
+Excited,adventurous,Mexican,Ceviche
+Excited,adventurous,Mexican,Carnitas
+Excited,adventurous,Continental,Shrimp Cocktail
+Excited,adventurous,Continental,Charcuterie
+Excited,adventurous,Continental,Fondue
+Excited,adventurous,Japanese,Sushi Platter
+Excited,adventurous,Japanese,Wagyu Beef
+Excited,adventurous,Japanese,Unagi
+Excited,veg,Indian,Veg Biryani
+Excited,veg,Indian,Chole Bhature
+Excited,veg,Indian,Paneer Tikka
+Excited,veg,Chinese,Veg Manchurian
+Excited,veg,Chinese,Veg Chowmein
+Excited,veg,Chinese,Paneer Chilli
+Excited,veg,Italian,Margherita Pizza
+Excited,veg,Italian,Bruschetta
+Excited,veg,Italian,Pesto Pasta
+Excited,veg,Mexican,Veggie Nachos
+Excited,veg,Mexican,Cheese Quesadilla
+Excited,veg,Mexican,Bean Burrito
+Excited,veg,Continental,Cheese Platter
+Excited,veg,Continental,Veggie Burger
+Excited,veg,Continental,Pasta
+Excited,veg,Japanese,Veg Sushi
+Excited,veg,Japanese,Tofu Tempura
+Excited,veg,Japanese,Veg Ramen
+Excited,vegan,Indian,Vegan Biryani
+Excited,vegan,Indian,Aloo Gobi
+Excited,vegan,Indian,Chana Masala
+Excited,vegan,Chinese,Vegan Dim Sum
+Excited,vegan,Chinese,Tofu Stir Fry
+Excited,vegan,Chinese,Vegan Noodles
+Excited,vegan,Italian,Vegan Pizza
+Excited,vegan,Italian,Marinara Pasta
+Excited,vegan,Italian,Salad
+Excited,vegan,Mexican,Vegan Tacos
+Excited,vegan,Mexican,Guacamole Bowl
+Excited,vegan,Mexican,Vegan Chili
+Excited,vegan,Continental,Acai Bowl
+Excited,vegan,Continental,Rainbow Salad
+Excited,vegan,Continental,Smoothie Bowl
+Excited,vegan,Japanese,Vegan Sushi
+Excited,vegan,Japanese,Seaweed Salad
+Excited,vegan,Japanese,Tofu
+Excited,drinks,Sweet,Virgin Mojito
+Excited,drinks,Sweet,Fruit Punch
+Excited,drinks,Sweet,Tropical Smoothie
+Excited,drinks,Sweet,Sparkling Juice
+Excited,drinks,Non-Sweet,Iced Matcha
+Excited,drinks,Non-Sweet,Sparkling Water
+Excited,drinks,Non-Sweet,Fresh Lime Soda
+Excited,drinks,Non-Sweet,Matcha
+Bored,comfort,Indian,Maggi
+Bored,comfort,Indian,Bread Pakora
+Bored,comfort,Indian,Aloo Chaat
+Bored,comfort,Chinese,Instant Noodles
+Bored,comfort,Chinese,Fried Rice
+Bored,comfort,Chinese,Manchurian
+Bored,comfort,Italian,Grilled Sandwich
+Bored,comfort,Italian,Pizza Slice
+Bored,comfort,Italian,Pasta
+Bored,comfort,Mexican,Nachos
+Bored,comfort,Mexican,Quesadilla
+Bored,comfort,Mexican,Taco
+Bored,comfort,Continental,French Fries
+Bored,comfort,Continental,Nuggets
+Bored,comfort,Continental,Burger
+Bored,comfort,Japanese,Onigiri
+Bored,comfort,Japanese,Cup Noodles
+Bored,comfort,Japanese,Yakitori
+Bored,healthy,Indian,Roasted Makhana
+Bored,healthy,Indian,Bhel Puri
+Bored,healthy,Indian,Fruit Skewers
+Bored,healthy,Chinese,Tofu Bites
+Bored,healthy,Chinese,Edamame
+Bored,healthy,Chinese,Clear Soup
+Bored,healthy,Italian,Apple & Cheese
+Bored,healthy,Italian,Caprese Skewers
+Bored,healthy,Italian,Yogurt
+Bored,healthy,Mexican,Veggie Chips
+Bored,healthy,Mexican,Guacamole & Veggies
+Bored,healthy,Mexican,Corn
+Bored,healthy,Continental,Trail Mix
+Bored,healthy,Continental,Greek Yogurt
+Bored,healthy,Continental,Granola Bar
+Bored,healthy,Japanese,Seaweed Snack
+Bored,healthy,Japanese,Miso Soup
+Bored,healthy,Japanese,Cucumber Roll
+Bored,adventurous,Indian,Vada Pav
+Bored,adventurous,Indian,Pav Bhaji
+Bored,adventurous,Indian,Misal Pav
+Bored,adventurous,Chinese,Bao Buns
+Bored,adventurous,Chinese,Dim Sum
+Bored,adventurous,Chinese,Bubble Waffle
+Bored,adventurous,Italian,Bruschetta
+Bored,adventurous,Italian,Truffle Fries
+Bored,adventurous,Italian,Arancini
+Bored,adventurous,Mexican,Street Tacos
+Bored,adventurous,Mexican,Elote
+Bored,adventurous,Mexican,Churros
+Bored,adventurous,Continental,Slider
+Bored,adventurous,Continental,Spring Roll
+Bored,adventurous,Continental,Falafel
+Bored,adventurous,Japanese,Takoyaki
+Bored,adventurous,Japanese,Mochi
+Bored,adventurous,Japanese,Taiyaki
+Bored,veg,Indian,Samosa
+Bored,veg,Indian,Kachori
+Bored,veg,Indian,Pani Puri
+Bored,veg,Chinese,Veg Manchurian
+Bored,veg,Chinese,Veg Chowmein
+Bored,veg,Chinese,Paneer Chilli
+Bored,veg,Italian,Garlic Bread
+Bored,veg,Italian,Cheese Sandwich
+Bored,veg,Italian,Veggie Pizza
+Bored,veg,Mexican,Veggie Nachos
+Bored,veg,Mexican,Corn Chaat
+Bored,veg,Mexican,Bean Taco
+Bored,veg,Continental,Popcorn
+Bored,veg,Continental,French Fries
+Bored,veg,Continental,Nuggets
+Bored,veg,Japanese,Veg Gyoza
+Bored,veg,Japanese,Edamame
+Bored,veg,Japanese,Pickled Veg
+Bored,vegan,Indian,Fruit Chaat
+Bored,vegan,Indian,Jeera Aloo
+Bored,vegan,Indian,Vegan Samosa
+Bored,vegan,Chinese,Vegan Soup
+Bored,vegan,Chinese,Fruit Skewers
+Bored,vegan,Chinese,Tofu Bites
+Bored,vegan,Italian,Vegan Pasta
+Bored,vegan,Italian,Roasted Almonds
+Bored,vegan,Italian,Salad
+Bored,vegan,Mexican,Vegan Tacos
+Bored,vegan,Mexican,Fruit Platter
+Bored,vegan,Mexican,Guacamole
+Bored,vegan,Continental,Fruit Chips
+Bored,vegan,Continental,Energy Balls
+Bored,vegan,Continental,Popcorn
+Bored,vegan,Japanese,Seaweed
+Bored,vegan,Japanese,Pickled Cucumber
+Bored,vegan,Japanese,Tofu
+Bored,drinks,Sweet,Bubble Tea
+Bored,drinks,Sweet,Cold Coffee
+Bored,drinks,Sweet,Masala Soda
+Bored,drinks,Sweet,Lemonade
+Bored,drinks,Non-Sweet,Jaljeera
+Bored,drinks,Non-Sweet,Sparkling Water
+Bored,drinks,Non-Sweet,Iced Black Tea
+Bored,drinks,Non-Sweet,Iced Matcha
+Anxious,comfort,Indian,Khichdi
+Anxious,comfort,Indian,Dal Chawal
+Anxious,comfort,Indian,Curd Rice
+Anxious,comfort,Chinese,Wonton Soup
+Anxious,comfort,Chinese,Congee
+Anxious,comfort,Chinese,Plain Rice
+Anxious,comfort,Italian,Spaghetti with Butter
+Anxious,comfort,Italian,Tomato Soup
+Anxious,comfort,Italian,Risotto
+Anxious,comfort,Mexican,Cheese Quesadilla
+Anxious,comfort,Mexican,Warm Bean Bowl
+Anxious,comfort,Mexican,Soft Taco
+Anxious,comfort,Continental,Mashed Potatoes
+Anxious,comfort,Continental,Chicken Soup
+Anxious,comfort,Continental,Toast
+Anxious,comfort,Japanese,Miso Soup
+Anxious,comfort,Japanese,Udon Noodles
+Anxious,comfort,Japanese,Steamed Rice
+Anxious,healthy,Indian,Warm Turmeric Milk
+Anxious,healthy,Indian,Oats
+Anxious,healthy,Indian,Banana
+Anxious,healthy,Chinese,Ginger Tea
+Anxious,healthy,Chinese,Clear Broth
+Anxious,healthy,Chinese,Tofu
+Anxious,healthy,Italian,Minestrone
+Anxious,healthy,Italian,Baked Veggies
+Anxious,healthy,Italian,Herb Tea
+Anxious,healthy,Mexican,Oatmeal
+Anxious,healthy,Mexican,Banana Bowl
+Anxious,healthy,Mexican,Warm Seeds
+Anxious,healthy,Continental,Chamomile Oatmeal
+Anxious,healthy,Continental,Almonds
+Anxious,healthy,Continental,Warm Milk
+Anxious,healthy,Japanese,Green Tea
+Anxious,healthy,Japanese,Soft Tofu
+Anxious,healthy,Japanese,Congee
+Anxious,adventurous,Indian,Idli Sambar
+Anxious,adventurous,Indian,Upma
+Anxious,adventurous,Indian,Poha
+Anxious,adventurous,Chinese,Steamed Buns
+Anxious,adventurous,Chinese,Soft Tofu
+Anxious,adventurous,Chinese,Herbal Soup
+Anxious,adventurous,Italian,Gnocchi
+Anxious,adventurous,Italian,Panna Cotta
+Anxious,adventurous,Italian,Polenta
+Anxious,adventurous,Mexican,Tamales
+Anxious,adventurous,Mexican,Atole
+Anxious,adventurous,Mexican,Soft Enchilada
+Anxious,adventurous,Continental,Porridge
+Anxious,adventurous,Continental,Custard
+Anxious,adventurous,Continental,Rice Pudding
+Anxious,adventurous,Japanese,Custard Pudding
+Anxious,adventurous,Japanese,Matcha Tea
+Anxious,adventurous,Japanese,Steamed Fish
+Anxious,veg,Indian,Dal Fry
+Anxious,veg,Indian,Jeera Rice
+Anxious,veg,Indian,Aloo Gobi
+Anxious,veg,Chinese,Veg Soup
+Anxious,veg,Chinese,Veg Momos
+Anxious,veg,Chinese,Tofu Stir Fry
+Anxious,veg,Italian,Tomato Basil Pasta
+Anxious,veg,Italian,Mushroom Soup
+Anxious,veg,Italian,Bruschetta
+Anxious,veg,Mexican,Veggie Bean Bowl
+Anxious,veg,Mexican,Guacamole
+Anxious,veg,Mexican,Corn
+Anxious,veg,Continental,Warm Veggie Soup
+Anxious,veg,Continental,Toast with Jam
+Anxious,veg,Continental,Potato Salad
+Anxious,veg,Japanese,Veg Gyoza
+Anxious,veg,Japanese,Edamame
+Anxious,veg,Japanese,Rice
+Anxious,vegan,Indian,Vegan Khichdi
+Anxious,vegan,Indian,Fruit Chaat
+Anxious,vegan,Indian,Jeera Aloo
+Anxious,vegan,Chinese,Vegan Soup
+Anxious,vegan,Chinese,Fruit Skewers
+Anxious,vegan,Chinese,Tofu Bites
+Anxious,vegan,Italian,Vegan Pasta
+Anxious,vegan,Italian,Roasted Almonds
+Anxious,vegan,Italian,Salad
+Anxious,vegan,Mexican,Vegan Tacos
+Anxious,vegan,Mexican,Fruit Platter
+Anxious,vegan,Mexican,Guacamole
+Anxious,vegan,Continental,Fruit Chips
+Anxious,vegan,Continental,Energy Balls
+Anxious,vegan,Continental,Popcorn
+Anxious,vegan,Japanese,Seaweed
+Anxious,vegan,Japanese,Pickled Cucumber
+Anxious,vegan,Japanese,Tofu
+Anxious,drinks,Sweet,Turmeric Latte
+Anxious,drinks,Sweet,Warm Milk with Honey
+Anxious,drinks,Sweet,Hot Chocolate
+Anxious,drinks,Sweet,Vanilla Tea
+Anxious,drinks,Non-Sweet,Chamomile Tea
+Anxious,drinks,Non-Sweet,Warm Lemon Water
+Anxious,drinks,Non-Sweet,Lavender Tea
+Anxious,drinks,Non-Sweet,Peppermint Tea
+Romantic,comfort,Indian,Shahi Paneer
+Romantic,comfort,Indian,Butter Chicken
+Romantic,comfort,Indian,Gulab Jamun
+Romantic,comfort,Chinese,Honey Chilli Lotus Stem
+Romantic,comfort,Chinese,Date Pancakes
+Romantic,comfort,Chinese,Peking Duck
+Romantic,comfort,Italian,Pasta Alfredo
+Romantic,comfort,Italian,Tiramisu
+Romantic,comfort,Italian,Wine
+Romantic,comfort,Mexican,Chocolate Fondue
+Romantic,comfort,Mexican,Churros
+Romantic,comfort,Mexican,Sweet Tamale
+Romantic,comfort,Continental,Steak
+Romantic,comfort,Continental,Chocolate Mousse
+Romantic,comfort,Continental,Cheese Platter
+Romantic,comfort,Japanese,Sushi Platter
+Romantic,comfort,Japanese,Matcha Cake
+Romantic,comfort,Japanese,Sashimi
+Romantic,healthy,Indian,Strawberry Salad
+Romantic,healthy,Indian,Fruit Skewers
+Romantic,healthy,Indian,Coconut Water
+Romantic,healthy,Chinese,Shrimp Salad
+Romantic,healthy,Chinese,Fruit Medley
+Romantic,healthy,Chinese,Ginger Tea
+Romantic,healthy,Italian,Caprese Salad
+Romantic,healthy,Italian,Grilled Salmon
+Romantic,healthy,Italian,Fig & Cheese
+Romantic,healthy,Mexican,Fruit Tacos
+Romantic,healthy,Mexican,Acai Bowl
+Romantic,healthy,Mexican,Yogurt
+Romantic,healthy,Continental,Strawberry Salad
+Romantic,healthy,Continental,Grilled Fish
+Romantic,healthy,Continental,Berry Smoothie
+Romantic,healthy,Japanese,Sashimi
+Romantic,healthy,Japanese,Seaweed Salad
+Romantic,healthy,Japanese,Green Tea
+Romantic,adventurous,Indian,Prawn Moilee
+Romantic,adventurous,Indian,Raan
+Romantic,adventurous,Indian,Appam & Stew
+Romantic,adventurous,Chinese,Lobster
+Romantic,adventurous,Chinese,Bird's Nest Soup
+Romantic,adventurous,Chinese,Shark Fin Soup
+Romantic,adventurous,Italian,Truffle Risotto
+Romantic,adventurous,Italian,Lobster Pasta
+Romantic,adventurous,Italian,Osso Buco
+Romantic,adventurous,Mexican,Ceviche
+Romantic,adventurous,Mexican,Mole Poblano
+Romantic,adventurous,Mexican,Shrimp Fajitas
+Romantic,adventurous,Continental,Caviar
+Romantic,adventurous,Continental,Oysters
+Romantic,adventurous,Continental,Duck Confit
+Romantic,adventurous,Japanese,Wagyu Steak
+Romantic,adventurous,Japanese,Uni
+Romantic,adventurous,Japanese,Sushi
+Romantic,veg,Indian,Paneer Tikka
+Romantic,veg,Indian,Dal Makhani
+Romantic,veg,Indian,Biryani
+Romantic,veg,Chinese,Veg Manchurian
+Romantic,veg,Chinese,Spring Rolls
+Romantic,veg,Chinese,Honey Chilli Potato
+Romantic,veg,Italian,Margherita Pizza
+Romantic,veg,Italian,Mushroom Risotto
+Romantic,veg,Italian,Pesto Pasta
+Romantic,veg,Mexican,Veggie Nachos
+Romantic,veg,Mexican,Cheese Quesadilla
+Romantic,veg,Mexican,Bean Burrito
+Romantic,veg,Continental,Cheese Platter
+Romantic,veg,Continental,Veg Au Gratin
+Romantic,veg,Continental,Stuffed Mushrooms
+Romantic,veg,Japanese,Veg Sushi
+Romantic,veg,Japanese,Tofu Tempura
+Romantic,veg,Japanese,Veg Ramen
+Romantic,vegan,Indian,Vegan Biryani
+Romantic,vegan,Indian,Aloo Gobi
+Romantic,vegan,Indian,Chana Masala
+Romantic,vegan,Chinese,Vegan Dim Sum
+Romantic,vegan,Chinese,Tofu Stir Fry
+Romantic,vegan,Chinese,Vegan Noodles
+Romantic,vegan,Italian,Vegan Pizza
+Romantic,vegan,Italian,Marinara Pasta
+Romantic,vegan,Italian,Salad
+Romantic,vegan,Mexican,Vegan Tacos
+Romantic,vegan,Mexican,Guacamole Bowl
+Romantic,vegan,Mexican,Vegan Chili
+Romantic,vegan,Continental,Acai Bowl
+Romantic,vegan,Continental,Rainbow Salad
+Romantic,vegan,Continental,Smoothie Bowl
+Romantic,vegan,Japanese,Vegan Sushi
+Romantic,vegan,Japanese,Seaweed Salad
+Romantic,vegan,Japanese,Tofu
+Romantic,drinks,Sweet,Rose Lassi
+Romantic,drinks,Sweet,Hot Chocolate
+Romantic,drinks,Sweet,Strawberry Smoothie
+Romantic,drinks,Sweet,Espresso Martini
+Romantic,drinks,Non-Sweet,Sparkling Water
+Romantic,drinks,Non-Sweet,Green Tea
+Romantic,drinks,Non-Sweet,Black Coffee
+Romantic,drinks,Non-Sweet,Iced Matcha

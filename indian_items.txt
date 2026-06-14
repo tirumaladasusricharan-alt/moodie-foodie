@@ -1,0 +1,552 @@
+﻿Total Indian items: 550
+---
+Adai
+Adai
+Adai
+Adai
+Aloo Gobi
+Aloo Tikki
+Aloo Tikki
+Aloo Tikki
+Aloo Tikki
+Aloo Tikki
+Aloo Tikki
+Aloo Tikki
+Appam
+Appam
+Appam
+Baingan Bharta
+Baingan Bharta
+Baingan Bharta
+Baingan Bharta
+Baingan Bharta
+Bhel Puri
+Bhel Puri
+Bhel Puri
+Bhel Puri
+Bhel Puri
+Bhindi Masala
+Bhindi Masala
+Bhindi Masala
+Bhindi Masala
+Bhindi Masala
+Biryani
+Biryani
+Butter Akki Rotti
+Butter Aloo Gobi
+Butter Bhel Puri
+Butter Biryani
+Butter Butter Chicken
+Butter Chicken
+Butter Chicken
+Butter Chicken Roll
+Butter Chole Bhature
+Butter Chole Chawal
+Butter Chole Chawal
+Butter Dahi Vada
+Butter Goan Prawn Curry
+Butter Idli with Sambar
+Butter Laal Maas
+Butter Misal Pav
+Butter Navratan Korma
+Butter Navratan Korma
+Butter Pakora
+Butter Pakora
+Butter Palak Paneer
+Butter Paneer Paratha
+Butter Pav Bhaji
+Butter Puttu
+Butter Rajma Chawal
+Chicken Bhel Puri
+Chicken Bhel Puri
+Chicken Bhindi Masala
+Chicken Chettinad
+Chicken Chettinad
+Chicken Chettinad
+Chicken Chettinad
+Chicken Chettinad
+Chicken Chettinad
+Chicken Classic Methi Thepla
+Chicken Dhokla
+Chicken Garlic Dal Makhani
+Chicken Garlic Kadhi Pakora
+Chicken Mild Idli with Sambar
+Chicken Navratan Korma
+Chicken Pani Puri
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Roll
+Chicken Sabudana Khichdi
+Chicken Sev Puri
+Chicken Sev Puri
+Chicken Spicy Sabudana Khichdi
+Chicken Spicy Upma
+Chicken Tandoori Aloo Paratha
+Chicken Tandoori Dal Makhani
+Chole Bhature
+Chole Bhature
+Chole Chawal
+Chole Chawal
+Chole Chawal
+Chole Chawal
+Chole Chawal
+Chole Chawal
+Classic Adai
+Classic Aloo Paratha
+Classic Aloo Paratha
+Classic Appam
+Classic Appam
+Classic Baingan Bharta
+Classic Baingan Bharta
+Classic Bhel Puri
+Classic Chicken Chettinad
+Classic Dhokla
+Classic Fish Curry
+Classic Idli with Sambar
+Classic Kachori
+Classic Kachori
+Classic Kadhi Pakora
+Classic Malai Kofta
+Classic Malai Kofta
+Classic Methi Thepla
+Classic Misal Pav
+Classic Momo
+Classic Pakora
+Classic Palak Paneer
+Classic Palak Paneer
+Classic Paneer Tikka Masala
+Classic Puttu
+Classic Samosa
+Classic Upma
+Classic Upma
+Dahi Vada
+Dahi Vada
+Dahi Vada
+Dahi Vada
+Dahi Vada
+Dahi Vada
+Dal Makhani
+Dal Makhani
+Dal Makhani
+Dal Makhani
+Dhokla
+Dhokla
+Dhokla
+Dhokla
+Egg Aloo Gobi
+Egg Biryani
+Egg Butter Methi Thepla
+Egg Curry
+Egg Curry
+Egg Curry
+Egg Curry
+Egg Home-style Laal Maas
+Egg Kachori
+Egg Laal Maas
+Egg Methi Thepla
+Egg Mild Bhindi Masala
+Egg Poha
+Egg Special Aloo Tikki
+Egg Special Aloo Tikki
+Egg Spicy Aloo Paratha
+Egg Spicy Moong Dal Chilla
+Egg Spicy Poha
+Fish Aloo Paratha
+Fish Bhindi Masala
+Fish Bhindi Masala
+Fish Classic Bhindi Masala
+Fish Classic Egg Curry
+Fish Curry
+Fish Curry
+Fish Curry
+Fish Curry
+Fish Dhokla
+Fish Garlic Pakora
+Fish Goan Prawn Curry
+Fish Home-style Misal Pav
+Fish Kadhi Pakora
+Fish Masala Dosa
+Fish Methi Thepla
+Fish Mild Neer Dosa
+Fish Mild Pav Bhaji
+Fish Misal Pav
+Fish Momo
+Fish Sabudana Khichdi
+Fish Special Rava Bhidi
+Fish Spicy Rava Bhidi
+Fish Tandoori Bhel Puri
+Fish Tandoori Navratan Korma
+Fish Tandoori Pakora
+Garlic Adai
+Garlic Bhel Puri
+Garlic Chole Bhature
+Garlic Chole Chawal
+Garlic Dahi Vada
+Garlic Dahi Vada
+Garlic Dhokla
+Garlic Egg Curry
+Garlic Goan Prawn Curry
+Garlic Idli with Sambar
+Garlic Kachori
+Garlic Kadhi Pakora
+Garlic Mutton Biryani
+Garlic Mutton Biryani
+Garlic Pakora
+Garlic Palak Paneer
+Garlic Paneer Roll
+Garlic Pani Puri
+Garlic Poha
+Garlic Rava Bhidi
+Garlic Rava Bhidi
+Garlic Sev Puri
+Garlic Sev Puri
+Garlic Upma
+Garlic Vada Pav
+Goan Prawn Curry
+Goan Prawn Curry
+Goan Prawn Curry
+Goan Prawn Curry
+Goan Prawn Curry
+Goan Prawn Curry
+Home-style Akki Rotti
+Home-style Biryani
+Home-style Chicken Roll
+Home-style Chicken Roll
+Home-style Chicken Roll
+Home-style Chicken Roll
+Home-style Chole Chawal
+Home-style Dal Makhani
+Home-style Dal Makhani
+Home-style Dhokla
+Home-style Idli with Sambar
+Home-style Kachori
+Home-style Malai Kofta
+Home-style Malai Kofta
+Home-style Misal Pav
+Home-style Mutton Rogan Josh
+Home-style Pakora
+Home-style Paneer Tikka Masala
+Home-style Paneer Tikka Masala
+Home-style Pani Puri
+Home-style Pav Bhaji
+Home-style Poha
+Home-style Vada Pav
+Idli with Sambar
+Idli with Sambar
+Kachori
+Kachori
+Kachori
+Kachori
+Kadhi Pakora
+Kadhi Pakora
+Kadhi Pakora
+Kadhi Pakora
+Laal Maas
+Laal Maas
+Laal Maas
+Laal Maas
+Masala Dosa
+Masala Dosa
+Masala Dosa
+Masala Dosa
+Masala Dosa
+Methi Thepla
+Mild Adai
+Mild Aloo Paratha
+Mild Aloo Paratha
+Mild Chicken Roll
+Mild Dahi Vada
+Mild Dhokla
+Mild Dhokla
+Mild Laal Maas
+Mild Masala Dosa
+Mild Moong Dal Chilla
+Mild Navratan Korma
+Mild Neer Dosa
+Mild Pakora
+Mild Pakora
+Mild Pakora
+Mild Pakora
+Mild Paneer Paratha
+Mild Poha
+Mild Sabudana Khichdi
+Mild Sev Puri
+Mild Upma
+Mild Vada Pav
+Misal Pav
+Misal Pav
+Misal Pav
+Misal Pav
+Misal Pav
+Momo
+Momo
+Momo
+Momo
+Momo
+Momo
+Moong Dal Chilla
+Moong Dal Chilla
+Moong Dal Chilla
+Moong Dal Chilla
+Moong Dal Chilla
+Moong Dal Chilla
+Mushroom Bhel Puri
+Mushroom Biryani
+Mushroom Butter Poha
+Mushroom Classic Mutton Rogan Josh
+Mushroom Classic Pav Bhaji
+Mushroom Dal Makhani
+Mushroom Dal Makhani
+Mushroom Home-style Mutton Rogan Josh
+Mushroom Kachori
+Mushroom Misal Pav
+Mushroom Moong Dal Chilla
+Mushroom Mutton Biryani
+Mushroom Neer Dosa
+Mushroom Puttu
+Mushroom Special Akki Rotti
+Mushroom Special Dahi Vada
+Mushroom Special Methi Thepla
+Mushroom Spicy Dahi Vada
+Mushroom Spicy Idli with Sambar
+Mushroom Spicy Navratan Korma
+Mutton Butter Bhindi Masala
+Mutton Dhokla
+Mutton Garlic Appam
+Mutton Misal Pav
+Mutton Pav Bhaji
+Mutton Rogan Josh
+Mutton Rogan Josh
+Mutton Rogan Josh
+Mutton Special Biryani
+Mutton Special Samosa
+Mutton Special Upma
+Mutton Spicy Chole Chawal
+Mutton Spicy Pakora
+Mutton Spicy Poha
+Mutton Spicy Vada Pav
+Navratan Korma
+Navratan Korma
+Navratan Korma
+Navratan Korma
+Neer Dosa
+Neer Dosa
+Neer Dosa
+Neer Dosa
+Pakora
+Pakora
+Pakora
+Pakora
+Palak Paneer
+Palak Paneer
+Palak Paneer
+Palak Paneer
+Palak Paneer
+Palak Paneer
+Paneer Adai
+Paneer Biryani
+Paneer Home-style Misal Pav
+Paneer Home-style Upma
+Paneer Mild Navratan Korma
+Paneer Mutton Biryani
+Paneer Navratan Korma
+Paneer Navratan Korma
+Paneer Navratan Korma
+Paneer Paratha
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Roll
+Paneer Special Pav Bhaji
+Paneer Spicy Biryani
+Paneer Spicy Biryani
+Paneer Spicy Sev Puri
+Paneer Tikka Masala
+Paneer Tikka Masala
+Paneer Tikka Masala
+Paneer Tikka Masala
+Pani Puri
+Pani Puri
+Pav Bhaji
+Pav Bhaji
+Pav Bhaji
+Pav Bhaji
+Pav Bhaji
+Poha
+Poha
+Poha
+Poha
+Prawn Adai
+Prawn Aloo Gobi
+Prawn Butter Rava Bhidi
+Prawn Chole Chawal
+Prawn Dal Makhani
+Prawn Fish Curry
+Prawn Home-style Methi Thepla
+Prawn Mild Masala Dosa
+Prawn Mild Sabudana Khichdi
+Prawn Momo
+Prawn Navratan Korma
+Prawn Rajma Chawal
+Prawn Samosa
+Prawn Samosa
+Puttu
+Puttu
+Puttu
+Puttu
+Puttu
+Puttu
+Rajma Chawal
+Rajma Chawal
+Rajma Chawal
+Rajma Chawal
+Rajma Chawal
+Rava Bhidi
+Rava Bhidi
+Rava Bhidi
+Sabudana Khichdi
+Sabudana Khichdi
+Sabudana Khichdi
+Sabudana Khichdi
+Sabudana Khichdi
+Samosa
+Samosa
+Samosa
+Samosa
+Samosa
+Sev Puri
+Sev Puri
+Sev Puri
+Sev Puri
+Sev Puri
+Sev Puri
+Special Akki Rotti
+Special Appam
+Special Bhel Puri
+Special Bhindi Masala
+Special Butter Chicken
+Special Chole Bhature
+Special Dahi Vada
+Special Dal Makhani
+Special Dal Makhani
+Special Dhokla
+Special Kachori
+Special Masala Dosa
+Special Masala Dosa
+Special Masala Dosa
+Special Masala Dosa
+Special Momo
+Special Momo
+Special Moong Dal Chilla
+Special Mutton Biryani
+Special Navratan Korma
+Special Neer Dosa
+Special Pakora
+Special Palak Paneer
+Special Paneer Paratha
+Special Paneer Roll
+Special Pani Puri
+Special Pani Puri
+Special Rajma Chawal
+Special Sabudana Khichdi
+Special Samosa
+Spicy Aloo Tikki
+Spicy Appam
+Spicy Baingan Bharta
+Spicy Bhindi Masala
+Spicy Biryani
+Spicy Dal Makhani
+Spicy Egg Curry
+Spicy Fish Curry
+Spicy Fish Curry
+Spicy Idli with Sambar
+Spicy Kachori
+Spicy Kadhi Pakora
+Spicy Laal Maas
+Spicy Momo
+Spicy Moong Dal Chilla
+Spicy Mutton Rogan Josh
+Spicy Navratan Korma
+Spicy Palak Paneer
+Spicy Paneer Paratha
+Spicy Paneer Tikka Masala
+Spicy Paneer Tikka Masala
+Spicy Pani Puri
+Spicy Puttu
+Spicy Puttu
+Spicy Rajma Chawal
+Spicy Rajma Chawal
+Spicy Rava Bhidi
+Spicy Samosa
+Spicy Sev Puri
+Spicy Sev Puri
+Spicy Upma
+Tandoori Akki Rotti
+Tandoori Aloo Gobi
+Tandoori Aloo Tikki
+Tandoori Baingan Bharta
+Tandoori Bhindi Masala
+Tandoori Butter Chicken
+Tandoori Butter Chicken
+Tandoori Chicken Roll
+Tandoori Chole Bhature
+Tandoori Dal Makhani
+Tandoori Egg Curry
+Tandoori Misal Pav
+Tandoori Momo
+Tandoori Momo
+Tandoori Mutton Rogan Josh
+Tandoori Navratan Korma
+Tandoori Neer Dosa
+Tandoori Palak Paneer
+Tandoori Palak Paneer
+Tandoori Paneer Paratha
+Tandoori Poha
+Tandoori Poha
+Tandoori Puttu
+Tandoori Rajma Chawal
+Tandoori Samosa
+Tofu Aloo Paratha
+Tofu Bhel Puri
+Tofu Biryani
+Tofu Butter Pakora
+Tofu Garlic Malai Kofta
+Tofu Kadhi Pakora
+Tofu Mild Pani Puri
+Tofu Misal Pav
+Tofu Moong Dal Chilla
+Tofu Pani Puri
+Tofu Samosa
+Tofu Spicy Momo
+Tofu Tandoori Bhindi Masala
+Tofu Upma
+Upma
+Upma
+Vada Pav
+Vada Pav
+Vada Pav
+Vada Pav
+Veg Akki Rotti
+Veg Appam
+Veg Butter Chole Chawal
+Veg Butter Sabudana Khichdi
+Veg Classic Pakora
+Veg Dahi Vada
+Veg Garlic Malai Kofta
+Veg Mutton Biryani
+Veg Pani Puri
+Veg Rajma Chawal
+Veg Rava Bhidi

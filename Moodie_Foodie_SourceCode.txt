@@ -1,0 +1,2792 @@
+================================================================
+   MOODIE FOODIE - COMPLETE SOURCE CODE MASTER DOCUMENT
+================================================================
+
+
+--- START OF FILE: app.py ---
+"""
+Moodie Foodie — Personality-driven food recommendation web app.
+Flask + MySQL + scikit-learn
+"""
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flaskwebgui import FlaskUI
+from database import get_db_connection, init_db, export_users_to_csv
+from moodie_engine import engine, PERSONALITIES, DIETS, CUISINES, MOODS, TIMES, WEATHERS
+import time
+import os
+import sys
+
+def get_path(filename):
+    if getattr(sys, 'frozen', False):
+        base = sys._MEIPASS
+    else:
+        base = os.path.abspath(".")
+    return os.path.join(base, filename)
+
+template_folder = get_path('templates')
+static_folder = get_path('static')
+
+app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+
+app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_moodie_key_2024')
+
+
+# ─── Helpers ────────────────────────────────────────────────────
+def _user_dict(row, columns):
+    """Convert a MySQL row tuple + column names to a dict."""
+    return dict(zip(columns, row))
+
+
+# ─── Routes ─────────────────────────────────────────────────────
+@app.route('/')
+def home():
+    if 'user_id' in session:
+        if session.get('role') == 'admin':
+            return redirect('/admin')
+        return redirect('/dashboard')
+    return redirect('/login')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        action = request.form.get('action', 'login')
+        username = request.form['username']
+        password = request.form['password']
+        role_intent = request.form.get('role_intent', 'user')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        if action == 'signup':
+            # ── Sign-up with personality analysis ──
+            age             = int(request.form.get('age', 25))
+            personality     = request.form.get('personality', 'Ambivert')
+            diet_type       = request.form.get('diet_type', 'Non-Vegetarian')
+            spice_level     = int(request.form.get('spice_level', 3))
+            sweet_tooth     = int(request.form.get('sweet_tooth', 3))
+            cuisine_pref    = request.form.get('cuisine_pref', 'Indian')
+            health_conscious = 1 if request.form.get('health_conscious') else 0
+            allergies       = request.form.get('allergies', '')
+
+            # Check if username already exists
+            cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
+            if cursor.fetchone():
+                flash('Username already taken. Please log in or choose another.', 'error')
+                cursor.close()
+                conn.close()
+                return redirect('/login')
+
+            cursor.execute(
+                """INSERT INTO users
+                   (username, password, age, personality, diet_type,
+                    spice_level, sweet_tooth, cuisine_pref, health_conscious, allergies, role)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (username, password, age, personality, diet_type,
+                 spice_level, sweet_tooth, cuisine_pref, health_conscious, allergies, 'user')
+            )
+            conn.commit()
+            
+            # Export to CSV automatically
+            export_users_to_csv()
+
+            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+            columns = [desc[0] for desc in cursor.description]
+            user = _user_dict(cursor.fetchone(), columns)
+
+            # Store profile in session
+            for key in ['id', 'username', 'age', 'personality', 'diet_type',
+                         'spice_level', 'sweet_tooth', 'cuisine_pref', 'health_conscious', 'allergies', 'role']:
+                session_key = 'user_id' if key == 'id' else key
+                session[session_key] = user[key]
+
+            flash(f'Welcome, {username}! Your taste profile is ready.', 'success')
+            cursor.close()
+            conn.close()
+            return redirect('/dashboard')
+
+        else:
+            # ── Log in ──
+            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+            row = cursor.fetchone()
+            if row:
+                columns = [desc[0] for desc in cursor.description]
+                user = _user_dict(row, columns)
+                if user['password'] == password:
+                    # Check role vs intent
+                    if role_intent == 'admin' and user['role'] != 'admin':
+                        flash('Unauthorized. You do not have admin privileges.', 'error')
+                        cursor.close()
+                        conn.close()
+                        return redirect('/login')
+                    
+                    for key in ['id', 'username', 'age', 'personality', 'diet_type',
+                                 'spice_level', 'sweet_tooth', 'cuisine_pref', 'health_conscious', 'allergies', 'role']:
+                        session_key = 'user_id' if key == 'id' else key
+                        session[session_key] = user[key]
+                    
+                    flash(f'Welcome back, {username}!', 'success')
+                    cursor.close()
+                    conn.close()
+                    
+                    if user['role'] == 'admin':
+                        return redirect('/admin')
+                    return redirect('/dashboard')
+                else:
+                    flash('Incorrect password.', 'error')
+            else:
+                flash('User not found. Please sign up first.', 'error')
+
+        cursor.close()
+        conn.close()
+
+    return render_template('login.html',
+                           personalities=PERSONALITIES,
+                           diets=DIETS,
+                           cuisines=CUISINES)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out successfully.', 'success')
+    return redirect('/login')
+
+
+@app.route('/dashboard', methods=['GET', 'POST'])
+def dashboard():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    if request.method == 'POST':
+        mood           = request.form.get('mood', 'Happy')
+        mood_intensity = int(request.form.get('intensity', 3))
+        time_of_day    = request.form.get('time_of_day', 'Afternoon')
+        weather        = request.form.get('weather', 'Pleasant')
+
+        # Log the mood
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO mood_logs (user_id, mood, mood_intensity, time_of_day, weather)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (session['user_id'], mood, mood_intensity, time_of_day, weather)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        # Build user profile for prediction
+        user_profile = {
+            'age':              session.get('age', 25),
+            'personality':      session.get('personality', 'Ambivert'),
+            'diet_type':        session.get('diet_type', 'Non-Vegetarian'),
+            'spice_level':      session.get('spice_level', 3),
+            'sweet_tooth':      session.get('sweet_tooth', 3),
+            'cuisine_pref':     session.get('cuisine_pref', 'Indian'),
+            'health_conscious': session.get('health_conscious', 0),
+            'allergies':        session.get('allergies', ''),
+            'mood':             mood,
+            'mood_intensity':   mood_intensity,
+            'time_of_day':      time_of_day,
+            'weather':          weather,
+        }
+
+        # ML prediction with timing
+        start_time = time.time()
+        results = engine.predict(user_profile)
+        exec_time = time.time() - start_time
+        print(f"[FAST] Prediction in {exec_time:.4f}s")
+
+        results['exec_time'] = round(exec_time, 4)
+        session['last_results'] = results
+        session['last_mood'] = mood
+        session['last_intensity'] = mood_intensity
+
+        return redirect('/results')
+
+    return render_template('dashboard.html',
+                           username=session['username'],
+                           personality=session.get('personality', 'Ambivert'),
+                           diet_type=session.get('diet_type'),
+                           moods=MOODS,
+                           times=TIMES,
+                           weathers=WEATHERS)
+
+
+@app.route('/results', methods=['GET', 'POST'])
+def results():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    results = session.get('last_results')
+    if not results:
+        return redirect('/dashboard')
+
+    if request.method == 'POST':
+        rating = int(request.form.get('rating', 3))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO feedback
+               (user_id, mood, mood_intensity, recommended_primary, rating)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (session['user_id'], session.get('last_mood'), session.get('last_intensity'),
+             results['primary'], rating)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Thanks for rating! Your feedback helps us improve.', 'success')
+        return redirect('/dashboard')
+
+    return render_template('results.html', results=results,
+                           username=session['username'])
+
+
+@app.route('/admin')
+def admin():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Total users
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+
+    # Average rating
+    cursor.execute('SELECT AVG(rating) FROM feedback')
+    avg_rating = cursor.fetchone()[0] or 0
+
+    # Most common mood
+    cursor.execute("""
+        SELECT mood, COUNT(*) as cnt FROM mood_logs
+        GROUP BY mood ORDER BY cnt DESC LIMIT 1
+    """)
+    row = cursor.fetchone()
+    top_mood = row[0] if row else 'N/A'
+
+    # Recent feedback
+    cursor.execute("""
+        SELECT f.id, u.username, f.mood, f.recommended_primary, f.rating, f.created_at
+        FROM feedback f JOIN users u ON f.user_id = u.id
+        ORDER BY f.created_at DESC LIMIT 15
+    """)
+    columns = [desc[0] for desc in cursor.description]
+    feedbacks = [dict(zip(columns, r)) for r in cursor.fetchall()]
+
+    # Personality distribution
+    cursor.execute('SELECT personality, COUNT(*) as cnt FROM users GROUP BY personality')
+    personality_dist = {r[0]: r[1] for r in cursor.fetchall()}
+
+    cursor.close()
+    conn.close()
+
+    stats = {
+        'total_users': total_users,
+        'average_rating': round(avg_rating, 1),
+        'most_common_mood': top_mood,
+    }
+
+    return render_template('admin.html', stats=stats, feedbacks=feedbacks,
+                           personality_dist=personality_dist)
+
+
+# ─── Startup ────────────────────────────────────────────────────
+if __name__ == '__main__':
+    print("[START] Initializing Moodie Foodie...")
+    init_db()
+
+    if not engine.is_trained:
+        engine.generate_synthetic_data()
+
+    # Integrated Desktop UI with flaskwebgui
+    # It will automatically find Chrome/Edge and open in app mode
+    ui = FlaskUI(app=app, server="flask", port=5000, width=1000, height=800)
+    ui.run()
+
+--- END OF FILE: app.py ---
+================================================================
+
+--- START OF FILE: moodie_engine.py ---
+"""
+Moodie Engine — ML-powered food recommendation system.
+
+Uses a RandomForestClassifier trained on synthetic mood + personality data
+to recommend foods. The pipeline handles encoding and scaling automatically.
+"""
+import os
+import random
+import numpy as np
+import pandas as pd
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+import sys
+
+def get_path(filename):
+    if getattr(sys, 'frozen', False):
+        base = sys._MEIPASS
+    else:
+        base = os.path.abspath(".")
+    return os.path.join(base, filename)
+
+MODEL_PATH = get_path('moodie_model.pkl')
+LABEL_PATH = get_path('moodie_labels.pkl')
+
+# ─── Food Mapping ──────────────────────────────────────────────
+# foods are now mapped as: mood -> category -> cuisine -> [foods]
+FOOD_DATABASE = {
+    'Happy': {
+        'comfort': {
+            'Indian': ['Butter Chicken', 'Biryani', 'Dal Makhani', 'Paneer Kulcha'],
+            'Chinese': ['Hakka Noodles', 'Spring Rolls', 'Manchurian'],
+            'Italian': ['Pasta Carbonara', 'Lasagna', 'Risotto'],
+            'Mexican': ['Tacos', 'Burritos', 'Nachos'],
+            'Continental': ['Steak', 'Fish and Chips', 'Roast Chicken'],
+            'Japanese': ['Katsu Curry', 'Tempura', 'Udon'],
+        },
+        'healthy': {
+            'Indian': ['Grilled Paneer Salad', 'Sprouts Chaat', 'Oats Idli'],
+            'Chinese': ['Steamed Momos', 'Clear Soup', 'Stir-fry Veggies'],
+            'Italian': ['Pesto Pasta', 'Caprese Salad', 'Vegetable Minestrone'],
+            'Mexican': ['Bean Salad', 'Grilled Corn', 'Veggie Bowl'],
+            'Continental': ['Quinoa Bowl', 'Grilled Chicken Salad', 'Fruit Medley'],
+            'Japanese': ['Sashimi', 'Miso Soup', 'Edamame'],
+        },
+        'adventurous': {
+            'Indian': ['Laal Maas', 'Appam & Stew', 'Litti Chokha'],
+            'Chinese': ['Dim Sum', 'Peking Duck', 'Kung Pao Chicken'],
+            'Italian': ['Truffle Pasta', 'Squid Ink Risotto', 'Gnocchi'],
+            'Mexican': ['Ceviche', 'Mole Poblano', 'Enchiladas'],
+            'Continental': ['Escargot', 'Ratatouille', 'Lobster Thermidor'],
+            'Japanese': ['Sushi Platter', 'Ramen', 'Takoyaki'],
+        },
+        'veg': {
+            'Indian': ['Paneer Tikka', 'Chole Bhature', 'Veg Biryani'],
+            'Chinese': ['Veg Manchurian', 'Veg Chowmein', 'Paneer Chilli'],
+            'Italian': ['Margherita Pizza', 'Mushroom Risotto', 'Bruschetta'],
+            'Mexican': ['Veggie Burrito', 'Cheese Quesadilla', 'Corn Tacos'],
+            'Continental': ['Veg Au Gratin', 'Stuffed Mushrooms', 'Garden Salad'],
+            'Japanese': ['Veg Sushi', 'Tofu Tempura', 'Veg Ramen'],
+        },
+        'vegan': {
+            'Indian': ['Chana Masala', 'Baingan Bharta', 'Aloo Gobi'],
+            'Chinese': ['Vegan Dim Sum', 'Tofu Stir Fry', 'Vegan Noodles'],
+            'Italian': ['Vegan Pizza', 'Marinara Pasta', 'Minestrone'],
+            'Mexican': ['Jackfruit Tacos', 'Guacamole Bowl', 'Vegan Chili'],
+            'Continental': ['Buddha Bowl', 'Lentil Soup', 'Roasted Veggies'],
+            'Japanese': ['Cucumber Sushi', 'Seaweed Salad', 'Tofu Soup'],
+        },
+        'drinks': {
+            'Sweet': ['Mango Lassi', 'Cold Coffee', 'Fruit Smoothie', 'Iced Tea', 'Milkshake'],
+            'Non-Sweet': ['Fresh Lime Soda', 'Buttermilk', 'Sparkling Water', 'Green Tea', 'Black Coffee'],
+        }
+    },
+    'Sad': {
+        'comfort': {
+            'Indian': ['Chicken Soup', 'Khichdi', 'Gajar Halwa'],
+            'Chinese': ['Wonton Soup', 'Fried Rice', 'Sweet & Sour Chicken'],
+            'Italian': ['Spaghetti', 'Tiramisu', 'Gelato'],
+            'Mexican': ['Churros', 'Hot Cocoa', 'Cheese Enchilada'],
+            'Continental': ['Chocolate Brownie', 'Ice Cream Sundae', 'Apple Pie'],
+            'Japanese': ['Mochi', 'Dorayaki', 'Hot Matcha'],
+        },
+        'healthy': {
+            'Indian': ['Warm Turmeric Milk', 'Moong Dal Soup', 'Honey Lemon Water'],
+            'Chinese': ['Ginger Tea', 'Clear Broth', 'Steamed Fish'],
+            'Italian': ['Fruit Salad', 'Baked Veggies', 'Herb Tea'],
+            'Mexican': ['Oatmeal', 'Banana Bowl', 'Warm Seeds'],
+            'Continental': ['Dark Chocolate Oatmeal', 'Banana Smoothie', 'Warm Lentil Soup'],
+            'Japanese': ['Soft Tofu', 'Plain Congee', 'Green Tea'],
+        },
+        'adventurous': {
+            'Indian': ['Rabri', 'Malpua', 'Shahi Tukda'],
+            'Chinese': ['Bao Buns', 'Mooncake', 'Sago Pudding'],
+            'Italian': ['Affogato', 'Cannoli', 'Panna Cotta'],
+            'Mexican': ['Hot Chocolate Fondue', 'Crepes', 'Tres Leches'],
+            'Continental': ['Soufflé', 'Profiteroles', 'Cheesecake'],
+            'Japanese': ['Taiyaki', 'Anmitsu', 'Matcha Parfait'],
+        },
+        'veg': {
+            'Indian': ['Aloo Paratha', 'Dal Tadka', 'Besan Ladoo'],
+            'Chinese': ['Veg Spring Rolls', 'Sweet Corn Soup', 'Honey Chilli Potato'],
+            'Italian': ['Cheese Pizza', 'Tomato Soup', 'Garlic Bread'],
+            'Mexican': ['Veggie Nachos', 'Corn Chaat', 'Sweet Potato Fries'],
+            'Continental': ['Mac & Cheese', 'Tomato Basil Soup', 'Fruit Cake'],
+            'Japanese': ['Agedashi Tofu', 'Veg Gyoza', 'Sweet Potato Tempura'],
+        },
+        'vegan': {
+            'Indian': ['Vegan Kheer', 'Potato Samosa', 'Fruit Chaat'],
+            'Chinese': ['Vegan Soup', 'Fruit Skewers', 'Coconut Milk Pudding'],
+            'Italian': ['Fruit Sorbet', 'Vegan Pasta', 'Roasted Almonds'],
+            'Mexican': ['Vegan Churros', 'Dark Chocolate', 'Fruit Platter'],
+            'Continental': ['Vegan Brownie', 'Coconut Yogurt', 'Chia Pudding'],
+            'Japanese': ['Fruit Sushi', 'Sweet Beans', 'Vegan Matcha'],
+        },
+        'drinks': {
+            'Sweet': ['Hot Chocolate', 'Warm Milk with Honey', 'Vanilla Milkshake', 'Strawberry Lassi'],
+            'Non-Sweet': ['Chamomile Tea', 'Warm Lemon Water', 'Peppermint Tea', 'Black Tea'],
+        }
+    },
+    'Stressed': {
+        'comfort': {
+            'Indian': ['Butter Naan & Dal', 'Chole Bhature', 'Rajma Chawal'],
+            'Chinese': ['Spicy Noodles', 'Schezwan Rice', 'Crispy Chicken'],
+            'Italian': ['Pepperoni Pizza', 'Lasagna', 'Pesto Pasta'],
+            'Mexican': ['Chicken Tacos', 'Burrito Grande', 'Loaded Nachos'],
+            'Continental': ['Burger & Fries', 'Fried Chicken', 'Club Sandwich'],
+            'Japanese': ['Chicken Katsu', 'Gyoza', 'Teriyaki Chicken'],
+        },
+        'healthy': {
+            'Indian': ['Roasted Makhana', 'Curd Rice', 'Boiled Eggs'],
+            'Chinese': ['Edamame', 'Tofu Salad', 'Veg Soup'],
+            'Italian': ['Greek Salad', 'Baked Salmon', 'Minestrone'],
+            'Mexican': ['Guacamole', 'Corn Salad', 'Black Bean Soup'],
+            'Continental': ['Green Smoothie', 'Oatmeal', 'Mixed Nuts'],
+            'Japanese': ['Miso Soup', 'Seaweed Salad', 'Steamed Veggies'],
+        },
+        'adventurous': {
+            'Indian': ['Keema Pav', 'Nalli Nihari', 'Fish Fry'],
+            'Chinese': ['Dim Sum', 'Kung Pao Shrimp', 'Mapo Tofu'],
+            'Italian': ['Calamari', 'Osso Buco', 'Gorgonzola Gnocchi'],
+            'Mexican': ['Fajitas', 'Mole', 'Chili con Carne'],
+            'Continental': ['Steak Tartare', 'Duck Confit', 'Escargot'],
+            'Japanese': ['Ramen', 'Sashimi', 'Unagi Bowl'],
+        },
+        'veg': {
+            'Indian': ['Palak Paneer', 'Aloo Gobi', 'Dal Fry'],
+            'Chinese': ['Veg Manchurian', 'Veg Chowmein', 'Spring Rolls'],
+            'Italian': ['Mushroom Pizza', 'Pesto Pasta', 'Bruschetta'],
+            'Mexican': ['Cheese Quesadilla', 'Veggie Taco', 'Bean Burrito'],
+            'Continental': ['Veggie Burger', 'Pasta Alfredo', 'French Fries'],
+            'Japanese': ['Veg Tempura', 'Tofu Ramen', 'Cucumber Roll'],
+        },
+        'vegan': {
+            'Indian': ['Chana Masala', 'Baingan Bharta', 'Jeera Aloo'],
+            'Chinese': ['Tofu Stir Fry', 'Vegan Momos', 'Clear Soup'],
+            'Italian': ['Vegan Pizza', 'Marinara Pasta', 'Salad'],
+            'Mexican': ['Vegan Tacos', 'Bean Salad', 'Salsa & Chips'],
+            'Continental': ['Buddha Bowl', 'Lentil Curry', 'Roasted Chickpeas'],
+            'Japanese': ['Inari Sushi', 'Vegan Ramen', 'Seaweed'],
+        },
+        'drinks': {
+            'Sweet': ['Iced Tea', 'Orange Juice', 'Lavender Latte', 'Fruit Punch'],
+            'Non-Sweet': ['Green Tea', 'Peppermint Tea', 'Lemon Water', 'Chamomile Tea'],
+        }
+    },
+    'Angry': {
+        'comfort': {
+            'Indian': ['Spicy Vindaloo', 'Mirchi Bajji', 'Kolhapuri Chicken'],
+            'Chinese': ['Fire Ramen', 'Chilli Chicken', 'Schezwan Fish'],
+            'Italian': ['Arrabbiata Pasta', 'Spicy Pizza', 'Diavola'],
+            'Mexican': ['Fiery Nachos', 'Jalapeno Poppers', 'Spicy Burrito'],
+            'Continental': ['Spicy Wings', 'Buffalo Burger', 'Steak with Pepper Sauce'],
+            'Japanese': ['Wasabi Peas', 'Spicy Ramen', 'Karage'],
+        },
+        'healthy': {
+            'Indian': ['Crunchy Salad', 'Buttermilk', 'Raw Veggies'],
+            'Chinese': ['Celery Salad', 'Steamed Tofu', 'Clear Broth'],
+            'Italian': ['Grilled Veggies', 'Garden Salad', 'Herbed Chicken'],
+            'Mexican': ['Salsa & Veggies', 'Grilled Corn', 'Black Bean Bowl'],
+            'Continental': ['Protein Shake', 'Apple & PB', 'Celery & Hummus'],
+            'Japanese': ['Edamame', 'Cucumber Salad', 'Tofu'],
+        },
+        'adventurous': {
+            'Indian': ['Bhut Jolokia Curry', 'Pork Vindaloo', 'Spicy Fish'],
+            'Chinese': ['Szechuan Hot Pot', 'Kung Pao Squid', 'Spicy Duck'],
+            'Italian': ['Angry Pasta', 'Spicy Sausage', 'Nduja'],
+            'Mexican': ['Habanero Tacos', 'Chilli Rellenos', 'Spicy Ceviche'],
+            'Continental': ['Ghost Pepper Wings', 'Spicy Steak', 'Peri Peri Chicken'],
+            'Japanese': ['Spicy Tuna Roll', 'Kimchi Ramen', 'Wasabi Sushi'],
+        },
+        'veg': {
+            'Indian': ['Paneer Chilli', 'Masala Dosa', 'Samosa'],
+            'Chinese': ['Veg Schezwan', 'Spicy Momos', 'Veg Manchurian'],
+            'Italian': ['Veggie Arrabbiata', 'Spicy Mushroom Pizza', 'Pesto'],
+            'Mexican': ['Spicy Veggie Wrap', 'Bean Taco', 'Nacho Bowl'],
+            'Continental': ['Veggie Wings', 'Spicy Fries', 'Falafel'],
+            'Japanese': ['Spicy Tofu', 'Wasabi Veg Roll', 'Veg Ramen'],
+        },
+        'vegan': {
+            'Indian': ['Spicy Aloo Gobi', 'Chana Masala', 'Vegan Samosa'],
+            'Chinese': ['Spicy Tofu Bowl', 'Vegan Chilli', 'Vegan Noodles'],
+            'Italian': ['Vegan Arrabbiata', 'Spicy Salad', 'Bruschetta'],
+            'Mexican': ['Spicy Bean Tacos', 'Chipotle Bowl', 'Hot Salsa'],
+            'Continental': ['Spicy Hummus', 'Roasted Seeds', 'Vegan Chilli'],
+            'Japanese': ['Spicy Seaweed', 'Tofu with Wasabi', 'Vegan Ramen'],
+        },
+        'drinks': {
+            'Sweet': ['Energy Smoothie', 'Cold Brew with Vanilla', 'Fruit Juice'],
+            'Non-Sweet': ['Iced Black Coffee', 'Ginger Lemon Tea', 'Sparkling Water', 'Cold Brew'],
+        }
+    },
+    'Excited': {
+        'comfort': {
+            'Indian': ['Chicken Tikka', 'Butter Naan', 'Biryani'],
+            'Chinese': ['Hakka Noodles', 'Spring Rolls', 'Sweet & Sour Pork'],
+            'Italian': ['Party Pizza', 'Lasagna', 'Calzone'],
+            'Mexican': ['Loaded Nachos', 'Quesadilla', 'Taco Tray'],
+            'Continental': ['BBQ Ribs', 'Fried Chicken', 'Hot Dogs'],
+            'Japanese': ['Takoyaki', 'Yakitori', 'Okonomiyaki'],
+        },
+        'healthy': {
+            'Indian': ['Fruit Platter', 'Coconut Water', 'Paneer Tikka'],
+            'Chinese': ['Steam Buns', 'Shrimp Salad', 'Fruit Medley'],
+            'Italian': ['Caprese Skewers', 'Fruit Salad', 'Smoothie'],
+            'Mexican': ['Fruit Tacos', 'Acai Bowl', 'Yogurt'],
+            'Continental': ['Protein Pancakes', 'Overnight Oats', 'Fruit Parfait'],
+            'Japanese': ['Fruit Sushi', 'Matcha Latte', 'Edamame'],
+        },
+        'adventurous': {
+            'Indian': ['Keema Samosa', 'Fish Moilee', 'Prawn Ghee Roast'],
+            'Chinese': ['Dim Sum Platter', 'Peking Duck', 'Hot Pot'],
+            'Italian': ['Seafood Pasta', 'Truffle Pizza', 'Risotto'],
+            'Mexican': ['Lobster Tacos', 'Ceviche', 'Carnitas'],
+            'Continental': ['Shrimp Cocktail', 'Charcuterie', 'Fondue'],
+            'Japanese': ['Sushi Platter', 'Wagyu Beef', 'Unagi'],
+        },
+        'veg': {
+            'Indian': ['Veg Biryani', 'Chole Bhature', 'Paneer Tikka'],
+            'Chinese': ['Veg Manchurian', 'Veg Chowmein', 'Paneer Chilli'],
+            'Italian': ['Margherita Pizza', 'Bruschetta', 'Pesto Pasta'],
+            'Mexican': ['Veggie Nachos', 'Cheese Quesadilla', 'Bean Burrito'],
+            'Continental': ['Cheese Platter', 'Veggie Burger', 'Pasta'],
+            'Japanese': ['Veg Sushi', 'Tofu Tempura', 'Veg Ramen'],
+        },
+        'vegan': {
+            'Indian': ['Vegan Biryani', 'Aloo Gobi', 'Chana Masala'],
+            'Chinese': ['Vegan Dim Sum', 'Tofu Stir Fry', 'Vegan Noodles'],
+            'Italian': ['Vegan Pizza', 'Marinara Pasta', 'Salad'],
+            'Mexican': ['Vegan Tacos', 'Guacamole Bowl', 'Vegan Chili'],
+            'Continental': ['Acai Bowl', 'Rainbow Salad', 'Smoothie Bowl'],
+            'Japanese': ['Vegan Sushi', 'Seaweed Salad', 'Tofu'],
+        },
+        'drinks': {
+            'Sweet': ['Virgin Mojito', 'Fruit Punch', 'Tropical Smoothie', 'Sparkling Juice'],
+            'Non-Sweet': ['Iced Matcha', 'Sparkling Water', 'Fresh Lime Soda', 'Matcha'],
+        }
+    },
+    'Bored': {
+        'comfort': {
+            'Indian': ['Maggi', 'Bread Pakora', 'Aloo Chaat'],
+            'Chinese': ['Instant Noodles', 'Fried Rice', 'Manchurian'],
+            'Italian': ['Grilled Sandwich', 'Pizza Slice', 'Pasta'],
+            'Mexican': ['Nachos', 'Quesadilla', 'Taco'],
+            'Continental': ['French Fries', 'Nuggets', 'Burger'],
+            'Japanese': ['Onigiri', 'Cup Noodles', 'Yakitori'],
+        },
+        'healthy': {
+            'Indian': ['Roasted Makhana', 'Bhel Puri', 'Fruit Skewers'],
+            'Chinese': ['Tofu Bites', 'Edamame', 'Clear Soup'],
+            'Italian': ['Apple & Cheese', 'Caprese Skewers', 'Yogurt'],
+            'Mexican': ['Veggie Chips', 'Guacamole & Veggies', 'Corn'],
+            'Continental': ['Trail Mix', 'Greek Yogurt', 'Granola Bar'],
+            'Japanese': ['Seaweed Snack', 'Miso Soup', 'Cucumber Roll'],
+        },
+        'adventurous': {
+            'Indian': ['Vada Pav', 'Pav Bhaji', 'Misal Pav'],
+            'Chinese': ['Bao Buns', 'Dim Sum', 'Bubble Waffle'],
+            'Italian': ['Bruschetta', 'Truffle Fries', 'Arancini'],
+            'Mexican': ['Street Tacos', 'Elote', 'Churros'],
+            'Continental': ['Slider', 'Spring Roll', 'Falafel'],
+            'Japanese': ['Takoyaki', 'Mochi', 'Taiyaki'],
+        },
+        'veg': {
+            'Indian': ['Samosa', 'Kachori', 'Pani Puri'],
+            'Chinese': ['Veg Manchurian', 'Veg Chowmein', 'Paneer Chilli'],
+            'Italian': ['Garlic Bread', 'Cheese Sandwich', 'Veggie Pizza'],
+            'Mexican': ['Veggie Nachos', 'Corn Chaat', 'Bean Taco'],
+            'Continental': ['Popcorn', 'French Fries', 'Nuggets'],
+            'Japanese': ['Veg Gyoza', 'Edamame', 'Pickled Veg'],
+        },
+        'vegan': {
+            'Indian': ['Fruit Chaat', 'Jeera Aloo', 'Vegan Samosa'],
+            'Chinese': ['Vegan Soup', 'Fruit Skewers', 'Tofu Bites'],
+            'Italian': ['Vegan Pasta', 'Roasted Almonds', 'Salad'],
+            'Mexican': ['Vegan Tacos', 'Fruit Platter', 'Guacamole'],
+            'Continental': ['Fruit Chips', 'Energy Balls', 'Popcorn'],
+            'Japanese': ['Seaweed', 'Pickled Cucumber', 'Tofu'],
+        },
+        'drinks': {
+            'Sweet': ['Bubble Tea', 'Cold Coffee', 'Masala Soda', 'Lemonade'],
+            'Non-Sweet': ['Jaljeera', 'Sparkling Water', 'Iced Black Tea', 'Iced Matcha'],
+        }
+    },
+    'Anxious': {
+        'comfort': {
+            'Indian': ['Khichdi', 'Dal Chawal', 'Curd Rice'],
+            'Chinese': ['Wonton Soup', 'Congee', 'Plain Rice'],
+            'Italian': ['Spaghetti with Butter', 'Tomato Soup', 'Risotto'],
+            'Mexican': ['Cheese Quesadilla', 'Warm Bean Bowl', 'Soft Taco'],
+            'Continental': ['Mashed Potatoes', 'Chicken Soup', 'Toast'],
+            'Japanese': ['Miso Soup', 'Udon Noodles', 'Steamed Rice'],
+        },
+        'healthy': {
+            'Indian': ['Warm Turmeric Milk', 'Oats', 'Banana'],
+            'Chinese': ['Ginger Tea', 'Clear Broth', 'Tofu'],
+            'Italian': ['Minestrone', 'Baked Veggies', 'Herb Tea'],
+            'Mexican': ['Oatmeal', 'Banana Bowl', 'Warm Seeds'],
+            'Continental': ['Chamomile Oatmeal', 'Almonds', 'Warm Milk'],
+            'Japanese': ['Green Tea', 'Soft Tofu', 'Congee'],
+        },
+        'adventurous': {
+            'Indian': ['Idli Sambar', 'Upma', 'Poha'],
+            'Chinese': ['Steamed Buns', 'Soft Tofu', 'Herbal Soup'],
+            'Italian': ['Gnocchi', 'Panna Cotta', 'Polenta'],
+            'Mexican': ['Tamales', 'Atole', 'Soft Enchilada'],
+            'Continental': ['Porridge', 'Custard', 'Rice Pudding'],
+            'Japanese': ['Custard Pudding', 'Matcha Tea', 'Steamed Fish'],
+        },
+        'veg': {
+            'Indian': ['Dal Fry', 'Jeera Rice', 'Aloo Gobi'],
+            'Chinese': ['Veg Soup', 'Veg Momos', 'Tofu Stir Fry'],
+            'Italian': ['Tomato Basil Pasta', 'Mushroom Soup', 'Bruschetta'],
+            'Mexican': ['Veggie Bean Bowl', 'Guacamole', 'Corn'],
+            'Continental': ['Warm Veggie Soup', 'Toast with Jam', 'Potato Salad'],
+            'Japanese': ['Veg Gyoza', 'Edamame', 'Rice'],
+        },
+        'vegan': {
+            'Indian': ['Vegan Khichdi', 'Fruit Chaat', 'Jeera Aloo'],
+            'Chinese': ['Vegan Soup', 'Fruit Skewers', 'Tofu Bites'],
+            'Italian': ['Vegan Pasta', 'Roasted Almonds', 'Salad'],
+            'Mexican': ['Vegan Tacos', 'Fruit Platter', 'Guacamole'],
+            'Continental': ['Fruit Chips', 'Energy Balls', 'Popcorn'],
+            'Japanese': ['Seaweed', 'Pickled Cucumber', 'Tofu'],
+        },
+        'drinks': {
+            'Sweet': ['Turmeric Latte', 'Warm Milk with Honey', 'Hot Chocolate', 'Vanilla Tea'],
+            'Non-Sweet': ['Chamomile Tea', 'Warm Lemon Water', 'Lavender Tea', 'Peppermint Tea'],
+        }
+    },
+    'Romantic': {
+        'comfort': {
+            'Indian': ['Shahi Paneer', 'Butter Chicken', 'Gulab Jamun'],
+            'Chinese': ['Honey Chilli Lotus Stem', 'Date Pancakes', 'Peking Duck'],
+            'Italian': ['Pasta Alfredo', 'Tiramisu', 'Wine'],
+            'Mexican': ['Chocolate Fondue', 'Churros', 'Sweet Tamale'],
+            'Continental': ['Steak', 'Chocolate Mousse', 'Cheese Platter'],
+            'Japanese': ['Sushi Platter', 'Matcha Cake', 'Sashimi'],
+        },
+        'healthy': {
+            'Indian': ['Strawberry Salad', 'Fruit Skewers', 'Coconut Water'],
+            'Chinese': ['Shrimp Salad', 'Fruit Medley', 'Ginger Tea'],
+            'Italian': ['Caprese Salad', 'Grilled Salmon', 'Fig & Cheese'],
+            'Mexican': ['Fruit Tacos', 'Acai Bowl', 'Yogurt'],
+            'Continental': ['Strawberry Salad', 'Grilled Fish', 'Berry Smoothie'],
+            'Japanese': ['Sashimi', 'Seaweed Salad', 'Green Tea'],
+        },
+        'adventurous': {
+            'Indian': ['Prawn Moilee', 'Raan', 'Appam & Stew'],
+            'Chinese': ['Lobster', 'Bird\'s Nest Soup', 'Shark Fin Soup'],
+            'Italian': ['Truffle Risotto', 'Lobster Pasta', 'Osso Buco'],
+            'Mexican': ['Ceviche', 'Mole Poblano', 'Shrimp Fajitas'],
+            'Continental': ['Caviar', 'Oysters', 'Duck Confit'],
+            'Japanese': ['Wagyu Steak', 'Uni', 'Sushi'],
+        },
+        'veg': {
+            'Indian': ['Paneer Tikka', 'Dal Makhani', 'Biryani'],
+            'Chinese': ['Veg Manchurian', 'Spring Rolls', 'Honey Chilli Potato'],
+            'Italian': ['Margherita Pizza', 'Mushroom Risotto', 'Pesto Pasta'],
+            'Mexican': ['Veggie Nachos', 'Cheese Quesadilla', 'Bean Burrito'],
+            'Continental': ['Cheese Platter', 'Veg Au Gratin', 'Stuffed Mushrooms'],
+            'Japanese': ['Veg Sushi', 'Tofu Tempura', 'Veg Ramen'],
+        },
+        'vegan': {
+            'Indian': ['Vegan Biryani', 'Aloo Gobi', 'Chana Masala'],
+            'Chinese': ['Vegan Dim Sum', 'Tofu Stir Fry', 'Vegan Noodles'],
+            'Italian': ['Vegan Pizza', 'Marinara Pasta', 'Salad'],
+            'Mexican': ['Vegan Tacos', 'Guacamole Bowl', 'Vegan Chili'],
+            'Continental': ['Acai Bowl', 'Rainbow Salad', 'Smoothie Bowl'],
+            'Japanese': ['Vegan Sushi', 'Seaweed Salad', 'Tofu'],
+        },
+        'drinks': {
+            'Sweet': ['Rose Lassi', 'Hot Chocolate', 'Strawberry Smoothie', 'Espresso Martini'],
+            'Non-Sweet': ['Sparkling Water', 'Green Tea', 'Black Coffee', 'Iced Matcha'],
+        }
+    },
+}
+
+PERSONALITIES = ['Introvert', 'Extrovert', 'Ambivert', 'Adventurous', 'Calm']
+DIETS = ['Vegetarian', 'Non-Vegetarian', 'Vegan', 'Eggetarian']
+CUISINES = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Continental', 'Japanese']
+MOODS = list(FOOD_DATABASE.keys())
+TIMES = ['Morning', 'Afternoon', 'Evening', 'Night']
+WEATHERS = ['Hot', 'Cold', 'Rainy', 'Pleasant']
+
+CATEGORICAL_FEATURES = ['personality', 'diet_type', 'cuisine_pref', 'mood', 'time_of_day', 'weather']
+NUMERICAL_FEATURES = ['age', 'spice_level', 'sweet_tooth', 'health_conscious', 'mood_intensity']
+
+
+def _pick_food_category(personality, diet_type, health_conscious, spice_level, mood):
+    """Determine the best food category for a user based on their profile."""
+    if diet_type == 'Vegan':
+        return 'vegan'
+    if diet_type == 'Vegetarian':
+        return 'veg'
+    if health_conscious:
+        return 'healthy'
+    if personality == 'Adventurous' or (personality == 'Extrovert' and spice_level >= 4):
+        return 'adventurous'
+    return 'comfort'
+
+
+def _select_food(mood, personality, diet_type, health_conscious, spice_level, cuisine_pref):
+    """Select a specific food item from the database."""
+    category = _pick_food_category(personality, diet_type, health_conscious, spice_level, mood)
+    mood_foods = FOOD_DATABASE.get(mood, FOOD_DATABASE['Happy'])
+    
+    # Check if category exists for this mood
+    cat_data = mood_foods.get(category, mood_foods['comfort'])
+    
+    # Check if cuisine exists for this category
+    if isinstance(cat_data, dict):
+        foods = cat_data.get(cuisine_pref, cat_data.get('Indian', ['Water']))
+    else:
+        # Fallback for drinks or if structure is not as expected
+        foods = cat_data
+        
+    return random.choice(foods)
+
+
+def _get_food_price(food_name):
+    """Generate a consistent, realistic INR price for a food based on its name."""
+    # Use sum of ascii values to generate a deterministic price between ₹150 and ₹950
+    name_val = sum(ord(c) for c in food_name)
+    base_price = 150 + (name_val % 80) * 10
+    return int(base_price)
+
+def _get_food_emoji(food_name):
+    """Return a consistent emoji sticker for the food."""
+    name = food_name.lower()
+    if any(k in name for k in ['pizza', 'margherita']): return '🍕'
+    if any(k in name for k in ['burger', 'vada pav']): return '🍔'
+    if any(k in name for k in ['sushi', 'poke']): return '🍣'
+    if any(k in name for k in ['noodles', 'ramen', 'pad thai', 'chowmein']): return '🍜'
+    if any(k in name for k in ['chicken', 'wings', 'nuggets']): return '🍗'
+    if any(k in name for k in ['taco', 'burrito', 'wrap', 'shawarma']): return '🌮'
+    if any(k in name for k in ['salad', 'bowl', 'veggie']): return '🥗'
+    if any(k in name for k in ['soup', 'pho']): return '🍲'
+    if any(k in name for k in ['cake', 'brownie', 'pie', 'fondue']): return '🍰'
+    if any(k in name for k in ['ice cream', 'sorbet']): return '🍦'
+    if any(k in name for k in ['curry', 'masala', 'dal', 'chole', 'rajma']): return '🍛'
+    if any(k in name for k in ['rice', 'biryani']): return '🍚'
+    if any(k in name for k in ['bread', 'naan', 'toast', 'sandwich']): return '🍞'
+    if any(k in name for k in ['fries', 'nachos', 'chips', 'popcorn']): return '🍟'
+    if any(k in name for k in ['pasta', 'mac & cheese', 'risotto']): return '🍝'
+    return '🥘'
+
+
+class MoodieEngine:
+    """ML-powered food recommendation engine."""
+
+    def __init__(self):
+        self.model = None
+        self.label_encoder = None
+        self.is_trained = False
+        self._try_load()
+
+    def _try_load(self):
+        """Try to load a previously trained model."""
+        if os.path.exists(MODEL_PATH) and os.path.exists(LABEL_PATH):
+            try:
+                self.model = joblib.load(MODEL_PATH)
+                self.label_encoder = joblib.load(LABEL_PATH)
+                self.is_trained = True
+                print("[OK] Loaded pre-trained model from disk.")
+            except Exception as e:
+                print(f"[WARN] Could not load model: {e})")
+                self.is_trained = False
+
+    def generate_synthetic_data(self, n_samples=2500):
+        """Generate synthetic training data and train the model."""
+        print("[INFO] Generating synthetic training data...")
+        rows = []
+        for _ in range(n_samples):
+            age = random.randint(15, 65)
+            personality = random.choice(PERSONALITIES)
+            diet_type = random.choice(DIETS)
+            spice_level = random.randint(0, 5)
+            sweet_tooth = random.randint(0, 5)
+            cuisine_pref = random.choice(CUISINES)
+            health_conscious = random.choice([0, 1])
+            mood = random.choice(MOODS)
+            mood_intensity = random.randint(0, 5)
+            time_of_day = random.choice(TIMES)
+            weather = random.choice(WEATHERS)
+
+            food = _select_food(mood, personality, diet_type, health_conscious, spice_level, cuisine_pref)
+
+            rows.append({
+                'age': age,
+                'personality': personality,
+                'diet_type': diet_type,
+                'spice_level': spice_level,
+                'sweet_tooth': sweet_tooth,
+                'cuisine_pref': cuisine_pref,
+                'health_conscious': health_conscious,
+                'mood': mood,
+                'mood_intensity': mood_intensity,
+                'time_of_day': time_of_day,
+                'weather': weather,
+                'recommended_food': food,
+            })
+
+        df = pd.DataFrame(rows)
+        self._train(df)
+
+    def _train(self, df):
+        """Train the RandomForest pipeline on the dataframe."""
+        print("[INFO] Training ML model...")
+        X = df.drop('recommended_food', axis=1)
+        y = df['recommended_food']
+
+        # Encode target labels
+        self.label_encoder = LabelEncoder()
+        y_encoded = self.label_encoder.fit_transform(y)
+
+        # Build preprocessing + model pipeline
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('cat', OneHotEncoder(handle_unknown='ignore'), CATEGORICAL_FEATURES),
+                ('num', StandardScaler(), NUMERICAL_FEATURES),
+            ]
+        )
+
+        self.model = Pipeline([
+            ('preprocessor', preprocessor),
+            ('classifier', RandomForestClassifier(
+                n_estimators=150,
+                max_depth=20,
+                min_samples_split=5,
+                random_state=42,
+                n_jobs=-1,
+            ))
+        ])
+
+        # Train-test split for validation
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y_encoded, test_size=0.2, random_state=42
+        )
+
+        self.model.fit(X_train, y_train)
+
+        # Evaluate
+        y_pred = self.model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        print(f"[OK] Model trained - Accuracy: {acc:.2%}")
+
+        # Save
+        joblib.dump(self.model, MODEL_PATH)
+        joblib.dump(self.label_encoder, LABEL_PATH)
+        self.is_trained = True
+        print("[OK] Model saved to disk.")
+
+    def predict(self, user_profile: dict) -> dict:
+        """
+        Predict food recommendations for a user.
+
+        Parameters
+        ----------
+        user_profile : dict with keys:
+            age, personality, diet_type, spice_level, sweet_tooth,
+            cuisine_pref, health_conscious, mood, mood_intensity,
+            time_of_day, weather
+
+        Returns
+        -------
+        dict with 'primary', 'alternatives' (list), 'drink', 'category'
+        """
+        if not self.is_trained:
+            self.generate_synthetic_data()
+
+        input_df = pd.DataFrame([{
+            'age': user_profile.get('age', 25),
+            'personality': user_profile.get('personality', 'Ambivert'),
+            'diet_type': user_profile.get('diet_type', 'Non-Vegetarian'),
+            'spice_level': user_profile.get('spice_level', 3),
+            'sweet_tooth': user_profile.get('sweet_tooth', 3),
+            'cuisine_pref': user_profile.get('cuisine_pref', 'Indian'),
+            'health_conscious': user_profile.get('health_conscious', 0),
+            'mood': user_profile.get('mood', 'Happy'),
+            'mood_intensity': user_profile.get('mood_intensity', 3),
+            'time_of_day': user_profile.get('time_of_day', 'Afternoon'),
+            'weather': user_profile.get('weather', 'Pleasant'),
+        }])
+
+        # Get probability distribution for top-N predictions
+        probas = self.model.predict_proba(input_df)[0]
+        # Get more indices initially to allow for allergy filtering
+        top_indices_all = np.argsort(probas)[::-1]
+        top_foods_all = self.label_encoder.inverse_transform(top_indices_all)
+
+        # Filter out foods based on allergies
+        allergies_str = user_profile.get('allergies', '')
+        allergy_list = [a.strip().lower() for a in allergies_str.split(',')] if allergies_str else []
+
+        filtered_top_indices = []
+        filtered_top_foods = []
+        
+        for idx, food in zip(top_indices_all, top_foods_all):
+            # Check if any allergy is a substring of the food name
+            has_allergy = any(allergy in food.lower() for allergy in allergy_list if allergy)
+            if not has_allergy:
+                filtered_top_indices.append(idx)
+                filtered_top_foods.append(food)
+                if len(filtered_top_foods) >= 5:
+                    break
+        
+        # Fallback if somehow all foods are filtered out (unlikely)
+        if not filtered_top_foods:
+            filtered_top_indices = top_indices_all[:5]
+            filtered_top_foods = top_foods_all[:5]
+
+        top_indices = filtered_top_indices[:5]
+        top_foods = filtered_top_foods[:5]
+
+        # Determine category & drink
+        mood = user_profile.get('mood', 'Happy')
+        personality = user_profile.get('personality', 'Ambivert')
+        diet_type = user_profile.get('diet_type', 'Non-Vegetarian')
+        health_conscious = user_profile.get('health_conscious', 0)
+        spice_level = user_profile.get('spice_level', 3)
+        sweet_tooth = user_profile.get('sweet_tooth', 3)
+
+        category = _pick_food_category(personality, diet_type, health_conscious, spice_level, mood)
+        mood_foods = FOOD_DATABASE.get(mood, FOOD_DATABASE['Happy'])
+        
+        # Select drink based on sweet tooth level
+        drink_options = mood_foods.get('drinks', {'Sweet': ['Water'], 'Non-Sweet': ['Water']})
+        if sweet_tooth <= 2:
+            drink = random.choice(drink_options.get('Non-Sweet', ['Water']))
+        else:
+            drink = random.choice(drink_options.get('Sweet', ['Water']))
+
+        # Confidence percentage for the primary recommendation
+        confidence = float(probas[top_indices[0]]) * 100
+
+        # Construct alternatives list with names and prices
+        alternatives = []
+        for alt_name in top_foods[1:4]:
+            alternatives.append({
+                'name': alt_name,
+                'price': f"₹{_get_food_price(alt_name)}",
+                'emoji': _get_food_emoji(alt_name)
+            })
+
+        return {
+            'primary': top_foods[0],
+            'primary_price': f"₹{_get_food_price(top_foods[0])}",
+            'primary_emoji': _get_food_emoji(top_foods[0]),
+            'alternatives': alternatives,
+            'drink': drink,
+            'category': category.title(),
+            'confidence': round(confidence, 1),
+            'mood': mood,
+        }
+
+
+# Singleton engine instance
+engine = MoodieEngine()
+
+--- END OF FILE: moodie_engine.py ---
+================================================================
+
+--- START OF FILE: database.py ---
+"""
+Database module for Moodie Foodie.
+Auto-detects MySQL — falls back to SQLite if MySQL is unavailable.
+All queries use %s placeholders (MySQL style); the SQLite wrapper translates them.
+"""
+import os
+import sqlite3
+import sys
+
+# ─── Try MySQL first ────────────────────────────────────────────
+USE_MYSQL = False
+try:
+    import mysql.connector
+    from mysql.connector import pooling
+
+    MYSQL_CONFIG = {
+        'host': 'localhost',
+        'user': 'root',
+        'password': '',           # ← Change to your MySQL root password
+        'database': 'moodie_foodie',
+        'port': 3306,
+    }
+    # Quick connectivity test
+    _test = mysql.connector.connect(
+        host=MYSQL_CONFIG['host'],
+        user=MYSQL_CONFIG['user'],
+        password=MYSQL_CONFIG['password'],
+        port=MYSQL_CONFIG['port'],
+    )
+    _test.close()
+    USE_MYSQL = True
+    print("[OK] MySQL detected - using MySQL backend.")
+except Exception:
+    print("[WARN] MySQL not available - using SQLite fallback.")
+
+# ─── MySQL pool (lazy) ──────────────────────────────────────────
+_pool = None
+
+def _get_mysql_pool():
+    global _pool
+    if _pool is None:
+        # Ensure database exists
+        cfg = {k: v for k, v in MYSQL_CONFIG.items() if k != 'database'}
+        conn = mysql.connector.connect(**cfg)
+        cur = conn.cursor()
+        cur.execute(
+            f"CREATE DATABASE IF NOT EXISTS `{MYSQL_CONFIG['database']}` "
+            "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        _pool = pooling.MySQLConnectionPool(
+            pool_name="moodie_pool", pool_size=5,
+            pool_reset_session=True, **MYSQL_CONFIG
+        )
+    return _pool
+
+# ─── SQLite path ────────────────────────────────────────────────
+def get_sqlite_path():
+    """Ensure the database lives next to the .exe for persistence."""
+    filename = 'moodie_foodie.db'
+    if getattr(sys, 'frozen', False):
+        # Directory where the .exe is located
+        base_dir = os.path.dirname(sys.executable)
+        local_path = os.path.join(base_dir, filename)
+        
+        # If the DB doesn't exist in the exe folder, check if we bundled a default one
+        if not os.path.exists(local_path):
+            meipass_path = os.path.join(sys._MEIPASS, filename)
+            if os.path.exists(meipass_path):
+                import shutil
+                try:
+                    shutil.copy(meipass_path, local_path)
+                except Exception:
+                    return meipass_path # Fallback to temp if copy fails
+        return local_path
+    else:
+        return os.path.abspath(filename)
+
+SQLITE_PATH = get_sqlite_path()
+
+
+# ─── Unified connection wrapper ─────────────────────────────────
+class _SQLiteWrapper:
+    """Wraps a SQLite connection so it behaves like mysql.connector."""
+
+    def __init__(self):
+        self.conn = sqlite3.connect(SQLITE_PATH)
+        self.conn.row_factory = sqlite3.Row  # dict-like rows
+
+    def cursor(self):
+        return _SQLiteCursorWrapper(self.conn.cursor())
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+
+class _SQLiteCursorWrapper:
+    """Translates %s → ? and exposes .description / .lastrowid."""
+
+    def __init__(self, cursor):
+        self._cur = cursor
+        self.description = None
+        self.lastrowid = None
+
+    def execute(self, query, params=None):
+        import re
+        # Translate MySQL-style %s to SQLite ?
+        query = query.replace('%s', '?')
+        # Translate MySQL 'INT AUTO_INCREMENT PRIMARY KEY' →
+        #   SQLite 'INTEGER PRIMARY KEY AUTOINCREMENT'
+        query = re.sub(
+            r'INT\s+AUTO_INCREMENT\s+PRIMARY\s+KEY',
+            'INTEGER PRIMARY KEY AUTOINCREMENT',
+            query,
+            flags=re.IGNORECASE
+        )
+        query = query.replace('ENGINE=InnoDB', '')
+        query = query.replace('TINYINT(1)', 'INTEGER')
+        query = query.replace('VARCHAR(100)', 'TEXT')
+        query = query.replace('VARCHAR(255)', 'TEXT')
+        query = query.replace('VARCHAR(200)', 'TEXT')
+        query = query.replace('VARCHAR(50)', 'TEXT')
+        query = query.replace('VARCHAR(20)', 'TEXT')
+        query = query.replace('CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', '')
+        # Remove FOREIGN KEY constraints for SQLite simplicity
+        if 'FOREIGN KEY' in query:
+            lines = query.split('\n')
+            lines = [l for l in lines if 'FOREIGN KEY' not in l]
+            query = '\n'.join(lines)
+            # Clean trailing comma before closing paren (handles whitespace/newlines)
+            query = re.sub(r',\s*\)', '\n)', query)
+
+        if params:
+            self._cur.execute(query, params)
+        else:
+            self._cur.execute(query)
+
+        self.description = self._cur.description
+        self.lastrowid = self._cur.lastrowid
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row and self.description:
+            # Return as tuple (like mysql.connector default)
+            return tuple(row)
+        return row
+
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        if rows and self.description:
+            return [tuple(r) for r in rows]
+        return rows
+
+    def close(self):
+        self._cur.close()
+
+
+def get_db_connection():
+    """Return a database connection (MySQL or SQLite)."""
+    if USE_MYSQL:
+        return _get_mysql_pool().get_connection()
+    else:
+        return _SQLiteWrapper()
+
+
+def init_db():
+    """Create all required tables."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id              INT AUTO_INCREMENT PRIMARY KEY,
+            username        VARCHAR(100) UNIQUE NOT NULL,
+            password        VARCHAR(255) NOT NULL,
+            age             INT DEFAULT 25,
+            personality     VARCHAR(50)  DEFAULT 'Ambivert',
+            diet_type       VARCHAR(50)  DEFAULT 'Non-Vegetarian',
+            spice_level     INT          DEFAULT 3,
+            sweet_tooth     INT          DEFAULT 3,
+            cuisine_pref    VARCHAR(50)  DEFAULT 'Indian',
+            health_conscious TINYINT(1)  DEFAULT 0,
+            allergies       VARCHAR(255) DEFAULT '',
+            role            VARCHAR(20)  DEFAULT 'user',
+            created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB
+    """)
+
+    # Ensure columns exist for existing databases
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN allergies VARCHAR(255) DEFAULT ''")
+    except Exception: pass
+
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user'")
+    except Exception: pass
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id                  INT AUTO_INCREMENT PRIMARY KEY,
+            user_id             INT NOT NULL,
+            mood                VARCHAR(50),
+            mood_intensity      INT,
+            recommended_primary VARCHAR(200),
+            rating              INT DEFAULT 0,
+            created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS mood_logs (
+            id              INT AUTO_INCREMENT PRIMARY KEY,
+            user_id         INT NOT NULL,
+            mood            VARCHAR(50),
+            mood_intensity  INT,
+            time_of_day     VARCHAR(20),
+            weather         VARCHAR(20),
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB
+    """)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    db_type = "MySQL" if USE_MYSQL else "SQLite"
+    print(f"[OK] Database tables created successfully ({db_type}).")
+    # Initial export
+    export_users_to_csv()
+
+
+def export_users_to_csv():
+    """Automatically export all user data to users_data.csv."""
+    try:
+        import csv
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get data
+        cursor.execute("SELECT * FROM users")
+        rows = cursor.fetchall()
+        
+        # Get headers
+        if USE_MYSQL:
+            headers = [desc[0] for desc in cursor.description]
+        else:
+            # For our SQLite wrapper, description is available after execute
+            headers = [desc[0] for desc in cursor.description]
+
+        # Use current directory for the CSV (next to the .exe)
+        csv_path = os.path.join(os.path.abspath("."), "users_data.csv")
+        
+        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+            writer.writerows(rows)
+            
+        cursor.close()
+        conn.close()
+        print(f"[OK] User data automatically exported to {csv_path}")
+    except Exception as e:
+        print(f"[ERR] Auto-export failed: {e}")
+
+
+if __name__ == '__main__':
+    init_db()
+
+--- END OF FILE: database.py ---
+================================================================
+
+--- START OF FILE: templates/login.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodie Foodie — Sign In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Animated background blobs */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0;
+        }
+        .bg-blob:nth-child(1) { width: 400px; height: 400px; background: #ff6b6b; top: -100px; left: -100px; }
+        .bg-blob:nth-child(2) { width: 350px; height: 350px; background: #4ecdc4; bottom: -80px; right: -80px; animation-delay: 2s; }
+        .bg-blob:nth-child(3) { width: 300px; height: 300px; background: #ffe66d; top: 50%; left: 50%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 520px;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px 36px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 28px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+        }
+
+        /* Flash messages */
+        .flash {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+        }
+        .flash.error { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+        .flash.success { background: rgba(78, 205, 196, 0.15); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.2); }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 13px 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #4ecdc4;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
+        }
+        .form-group select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+        .form-group input::placeholder { color: rgba(255,255,255,0.3); }
+
+        /* Range slider */
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .range-wrapper input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.15);
+            outline: none;
+            border: none;
+            padding: 0;
+        }
+        .range-wrapper input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(238, 90, 36, 0.4);
+        }
+        .range-value {
+            color: #ffe66d;
+            font-weight: 700;
+            font-size: 1rem;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* Row layout */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* Checkbox */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .checkbox-wrapper:hover {
+            border-color: #4ecdc4;
+        }
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4ecdc4;
+        }
+        .checkbox-wrapper span {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.3);
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(238, 90, 36, 0.4);
+        }
+        .submit-btn:active { transform: translateY(0); }
+
+        /* Personality section header */
+        .section-header {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 24px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .section-header span {
+            background: linear-gradient(90deg, #4ecdc4, #ffe66d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Hide signup fields by default */
+        .signup-fields { display: none; }
+        .signup-fields.show { display: block; animation: slideDown 0.4s ease; }
+    </style>
+</head>
+<body>
+    <div class="bg-blob"></div>
+    <div class="bg-blob"></div>
+    <div class="bg-blob"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <h1>🍔 Moodie Foodie</h1>
+                <p>Your mood, your food — perfectly matched</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <div class="tabs">
+                <button class="tab-btn active" id="tab-user" onclick="switchTab('user')">User Portal</button>
+                <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')">Admin Console</button>
+            </div>
+
+            <form method="POST" id="authForm">
+                <input type="hidden" name="action" id="formAction" value="login">
+                <input type="hidden" name="role_intent" id="roleIntent" value="user">
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="Enter your username" required>
+                </div>
+
+                <div class="form-group" style="position: relative;">
+                    <label>Password</label>
+                    <input type="password" name="password" id="passwordField" placeholder="Enter your password" required>
+                    <button type="button" onclick="togglePassword()" style="position: absolute; right: 10px; top: 32px; background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 1.2rem; padding: 5px;">
+                        <span id="eyeIcon">👁️</span>
+                    </button>
+                </div>
+
+                <!-- Signup specific toggle within User Portal -->
+                <div id="userOptions" style="margin-bottom: 20px;">
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; text-align: center;">
+                        <span id="toggleText">Don't have an account?</span> 
+                        <a href="#" onclick="toggleSignup()" id="toggleLink" style="color: #4ecdc4; text-decoration: none; font-weight: 600;">Sign Up</a>
+                    </p>
+                </div>
+
+                <div class="signup-fields" id="signupFields">
+                    <div class="section-header"><span>🧠 Tell us about yourself</span></div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" name="age" value="25" min="10" max="80">
+                        </div>
+                        <div class="form-group">
+                            <label>Personality</label>
+                            <select name="personality">
+                                {% for p in personalities %}
+                                <option value="{{ p }}">{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="section-header"><span>🍽️ Your food preferences</span></div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Diet Type</label>
+                            <select name="diet_type">
+                                {% for d in diets %}
+                                <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Cuisine Preference</label>
+                            <select name="cuisine_pref">
+                                {% for c in cuisines %}
+                                <option value="{{ c }}">{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Spice Level 🌶️</label>
+                        <div class="range-wrapper">
+                            <input type="range" name="spice_level" min="0" max="5" value="3"
+                                   oninput="document.getElementById('spiceVal').textContent = this.value">
+                            <span class="range-value" id="spiceVal">3</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sweet Tooth 🍰</label>
+                        <div class="range-wrapper">
+                            <input type="range" name="sweet_tooth" min="0" max="5" value="3"
+                                   oninput="document.getElementById('sweetVal').textContent = this.value">
+                            <span class="range-value" id="sweetVal">3</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" name="health_conscious" value="1">
+                            <span>🥗 I'm health conscious</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Food Allergies 🚫</label>
+                        <input type="text" name="allergies" placeholder="e.g., peanuts, dairy, gluten (comma separated)">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Log In to Portal</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let isSignup = false;
+        let currentMode = 'user';
+
+        function switchTab(mode) {
+            currentMode = mode;
+            const userBtn = document.getElementById('tab-user');
+            const adminBtn = document.getElementById('tab-admin');
+            const roleIntent = document.getElementById('roleIntent');
+            const userOptions = document.getElementById('userOptions');
+            const signupFields = document.getElementById('signupFields');
+            const submitBtn = document.getElementById('submitBtn');
+            const formAction = document.getElementById('formAction');
+
+            if (mode === 'admin') {
+                adminBtn.classList.add('active');
+                userBtn.classList.remove('active');
+                roleIntent.value = 'admin';
+                userOptions.style.display = 'none';
+                signupFields.classList.remove('show');
+                submitBtn.textContent = 'Enter Admin Console';
+                formAction.value = 'login';
+                isSignup = false;
+            } else {
+                userBtn.classList.add('active');
+                adminBtn.classList.remove('active');
+                roleIntent.value = 'user';
+                userOptions.style.display = 'block';
+                submitBtn.textContent = isSignup ? 'Create Account & Analyze' : 'Log In to Portal';
+                if (isSignup) signupFields.classList.add('show');
+            }
+        }
+
+        function toggleSignup() {
+            isSignup = !isSignup;
+            const signupFields = document.getElementById('signupFields');
+            const submitBtn = document.getElementById('submitBtn');
+            const formAction = document.getElementById('formAction');
+            const toggleText = document.getElementById('toggleText');
+            const toggleLink = document.getElementById('toggleLink');
+
+            if (isSignup) {
+                signupFields.classList.add('show');
+                submitBtn.textContent = 'Create Account & Analyze';
+                formAction.value = 'signup';
+                toggleText.textContent = 'Already have an account?';
+                toggleLink.textContent = 'Log In';
+            } else {
+                signupFields.classList.remove('show');
+                submitBtn.textContent = 'Log In to Portal';
+                formAction.value = 'login';
+                toggleText.textContent = "Don't have an account?";
+                toggleLink.textContent = 'Sign Up';
+            }
+        }
+
+        function togglePassword() {
+            const passwordField = document.getElementById('passwordField');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                passwordField.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>
+
+--- END OF FILE: templates/login.html ---
+================================================================
+
+--- START OF FILE: templates/dashboard.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodie Foodie — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #fff;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .navbar .brand {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .navbar .nav-right { display: flex; align-items: center; gap: 16px; }
+        .navbar .user-badge {
+            padding: 8px 16px;
+            background: rgba(78, 205, 196, 0.15);
+            border: 1px solid rgba(78,205,196,0.2);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+        .navbar .logout-btn {
+            padding: 8px 18px;
+            background: rgba(255,107,107,0.12);
+            border: 1px solid rgba(255,107,107,0.2);
+            border-radius: 12px;
+            color: #ff6b6b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .navbar .logout-btn:hover { background: rgba(255,107,107,0.25); }
+
+        .main { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+        /* Welcome */
+        .welcome {
+            margin-bottom: 32px;
+        }
+        .welcome h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .welcome h2 span {
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .welcome p { color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+        /* Profile card */
+        .profile-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+        .profile-chip {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .profile-chip .chip-icon { font-size: 1.4rem; margin-bottom: 6px; }
+        .profile-chip .chip-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 2px;
+        }
+        .profile-chip .chip-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffe66d;
+        }
+
+        /* Flash messages */
+        .flash {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .flash.success { background: rgba(78, 205, 196, 0.15); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.2); }
+        .flash.error { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+
+        /* Mood Form Card */
+        .mood-card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 36px;
+        }
+        .mood-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+        .mood-card h3 span { color: #4ecdc4; }
+
+        /* Mood grid */
+        .mood-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .mood-option {
+            position: relative;
+        }
+        .mood-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .mood-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 16px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+        }
+        .mood-option label .emoji { font-size: 1.6rem; }
+        .mood-option input:checked + label {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.12);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.15);
+            transform: scale(1.03);
+        }
+        .mood-option label:hover {
+            border-color: rgba(255,255,255,0.2);
+            transform: scale(1.02);
+        }
+
+        /* Context row */
+        .context-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
+        }
+        .form-group select option { background: #1a1a2e; color: #fff; }
+
+        /* Intensity */
+        .intensity-section { margin-bottom: 24px; }
+        .intensity-section label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .range-row input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.15);
+            outline: none;
+        }
+        .range-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(238, 90, 36, 0.4);
+        }
+        .range-val {
+            color: #ffe66d;
+            font-weight: 700;
+            font-size: 1.1rem;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.3);
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(238, 90, 36, 0.4);
+        }
+
+        @media (max-width: 600px) {
+            .mood-grid { grid-template-columns: repeat(2, 1fr); }
+            .context-row { grid-template-columns: 1fr; }
+            .profile-card { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="brand">🍔 Moodie Foodie</div>
+        <div class="nav-right">
+            <span class="user-badge">👋 {{ username }}</span>
+            {% if session.get('role') == 'admin' %}
+            <a href="/admin" class="logout-btn" style="color:#ffe66d; border-color:rgba(255,230,109,0.2); background:rgba(255,230,109,0.1);">📊 Admin</a>
+            {% endif %}
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="welcome">
+            <h2>Hey <span>{{ username }}</span> 👋</h2>
+            <p>Here's your taste profile — tell us how you're feeling today!</p>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-chip">
+                <div class="chip-icon">🧠</div>
+                <div class="chip-label">Personality</div>
+                <div class="chip-value">{{ personality }}</div>
+            </div>
+            <div class="profile-chip">
+                <div class="chip-icon">🥗</div>
+                <div class="chip-label">Diet</div>
+                <div class="chip-value">{{ diet_type }}</div>
+            </div>
+            <div class="profile-chip">
+                <div class="chip-icon">🌶️</div>
+                <div class="chip-label">Spice</div>
+                <div class="chip-value">{{ session.get('spice_level', 3) }}/5</div>
+            </div>
+            <div class="profile-chip">
+                <div class="chip-icon">🍰</div>
+                <div class="chip-label">Sweet</div>
+                <div class="chip-value">{{ session.get('sweet_tooth', 3) }}/5</div>
+            </div>
+            <div class="profile-chip">
+                <div class="chip-icon">🍜</div>
+                <div class="chip-label">Cuisine</div>
+                <div class="chip-value">{{ session.get('cuisine_pref', 'Indian') }}</div>
+            </div>
+            <div class="profile-chip">
+                <div class="chip-icon">💚</div>
+                <div class="chip-label">Health</div>
+                <div class="chip-value">{{ 'Yes' if session.get('health_conscious') else 'No' }}</div>
+            </div>
+            <div class="profile-chip">
+                <div class="chip-icon">🚫</div>
+                <div class="chip-label">Allergies</div>
+                <div class="chip-value">{{ session.get('allergies') or 'None' }}</div>
+            </div>
+        </div>
+
+        <div class="mood-card">
+            <h3>How are you <span>feeling</span> right now?</h3>
+            <form method="POST">
+                <div class="mood-grid">
+                    {% set mood_emojis = {'Happy':'😊', 'Sad':'😢', 'Stressed':'😰', 'Angry':'😠', 'Excited':'🤩', 'Bored':'😐', 'Anxious':'😟', 'Romantic':'🥰'} %}
+                    {% for mood in moods %}
+                    <div class="mood-option">
+                        <input type="radio" name="mood" id="mood-{{ mood }}" value="{{ mood }}"
+                               {{ 'checked' if loop.first }}>
+                        <label for="mood-{{ mood }}">
+                            <span class="emoji">{{ mood_emojis.get(mood, '🙂') }}</span>
+                            {{ mood }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="intensity-section">
+                    <label>Mood Intensity</label>
+                    <div class="range-row">
+                        <span style="font-size:0.75rem; color:rgba(255,255,255,0.4);">Mild</span>
+                        <input type="range" name="intensity" min="0" max="5" value="3"
+                               oninput="document.getElementById('intVal').textContent=this.value">
+                        <span style="font-size:0.75rem; color:rgba(255,255,255,0.4);">Intense</span>
+                        <span class="range-val" id="intVal">3</span>
+                    </div>
+                </div>
+
+                <div class="context-row">
+                    <div class="form-group">
+                        <label>Time of Day</label>
+                        <select name="time_of_day">
+                            {% for t in times %}
+                            <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Weather</label>
+                        <select name="weather">
+                            {% for w in weathers %}
+                            <option value="{{ w }}">{{ w }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <button type="submit" class="submit-btn">🔮 Get Recommendations</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+
+--- END OF FILE: templates/dashboard.html ---
+================================================================
+
+--- START OF FILE: templates/admin.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodie Foodie — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #fff;
+        }
+
+        .navbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 32px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .navbar .brand {
+            font-size: 1.3rem; font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d, #4ecdc4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .navbar a {
+            padding: 8px 18px; border-radius: 12px; text-decoration: none;
+            font-size: 0.85rem; font-weight: 600; transition: all 0.3s;
+            background: rgba(78,205,196,0.12); border: 1px solid rgba(78,205,196,0.2); color: #4ecdc4;
+        }
+        .navbar a:hover { background: rgba(78,205,196,0.25); }
+
+        .main { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+
+        .page-title {
+            font-size: 1.6rem; font-weight: 700; margin-bottom: 28px;
+        }
+        .page-title span {
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .stat-card .stat-icon { font-size: 1.8rem; margin-bottom: 10px; }
+        .stat-card .stat-value {
+            font-size: 2rem; font-weight: 800; color: #ffe66d;
+        }
+        .stat-card .stat-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+            color: rgba(255,255,255,0.4); margin-top: 4px;
+        }
+
+        /* Sections */
+        .section {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+        .section h3 {
+            font-size: 1rem; font-weight: 700; margin-bottom: 18px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Personality chart */
+        .personality-bars { display: flex; flex-direction: column; gap: 10px; }
+        .p-bar-row {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .p-bar-label {
+            min-width: 100px; font-size: 0.85rem; font-weight: 600;
+            color: rgba(255,255,255,0.7);
+        }
+        .p-bar-track {
+            flex: 1; height: 10px; background: rgba(255,255,255,0.08);
+            border-radius: 5px; overflow: hidden;
+        }
+        .p-bar-fill {
+            height: 100%; border-radius: 5px;
+            transition: width 1s ease;
+        }
+        .p-bar-count {
+            min-width: 30px; font-size: 0.8rem; font-weight: 700;
+            color: rgba(255,255,255,0.5); text-align: right;
+        }
+
+        /* Feedback table */
+        .table-wrapper { overflow-x: auto; }
+        table {
+            width: 100%; border-collapse: collapse;
+        }
+        th {
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        td {
+            padding: 12px 14px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.7);
+        }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+        .rating-stars { color: #ffe66d; letter-spacing: 2px; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .stats-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="brand">🍔 Moodie Foodie — Admin</div>
+        <a href="/dashboard">← Back to Dashboard</a>
+    </nav>
+
+    <div class="main">
+        <div class="page-title">📊 Analytics <span>Dashboard</span></div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">{{ stats.total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value">{{ stats.average_rating }}</div>
+                <div class="stat-label">Avg Rating</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🧠</div>
+                <div class="stat-value">{{ stats.most_common_mood }}</div>
+                <div class="stat-label">Top Mood</div>
+            </div>
+        </div>
+
+        <!-- Personality Distribution -->
+        <div class="section">
+            <h3>🧬 Personality Distribution</h3>
+            {% if personality_dist %}
+            {% set max_count = personality_dist.values()|max %}
+            {% set colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a29bfe', '#fd79a8'] %}
+            <div class="personality-bars">
+                {% for ptype, count in personality_dist.items() %}
+                <div class="p-bar-row">
+                    <div class="p-bar-label">{{ ptype }}</div>
+                    <div class="p-bar-track">
+                        <div class="p-bar-fill"
+                             style="width: {{ (count / max_count * 100)|round }}%; background: {{ colors[loop.index0 % 5] }};"></div>
+                    </div>
+                    <div class="p-bar-count">{{ count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No users yet</div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Feedback -->
+        <div class="section">
+            <h3>💬 Recent Feedback</h3>
+            {% if feedbacks %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Mood</th>
+                            <th>Recommended</th>
+                            <th>Rating</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fb in feedbacks %}
+                        <tr>
+                            <td>{{ fb.username }}</td>
+                            <td>{{ fb.mood or '—' }}</td>
+                            <td style="font-weight:600;">{{ fb.recommended_primary }}</td>
+                            <td><span class="rating-stars">{{ '⭐' * fb.rating }}</span></td>
+                            <td>{{ fb.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No feedback yet — recommendations are waiting to be rated!</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+
+--- END OF FILE: templates/admin.html ---
+================================================================
+
+--- START OF FILE: templates/results.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodie Foodie — Your Recommendations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #fff;
+        }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .navbar .brand {
+            font-size: 1.3rem; font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d, #4ecdc4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .navbar .nav-right { display: flex; align-items: center; gap: 12px; }
+        .navbar a {
+            padding: 8px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .back-btn { background: rgba(78,205,196,0.12); border: 1px solid rgba(78,205,196,0.2); color: #4ecdc4; }
+        .back-btn:hover { background: rgba(78,205,196,0.25); }
+
+        .main { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+
+        /* Mood header */
+        .mood-header {
+            text-align: center;
+            margin-bottom: 36px;
+            animation: fadeUp 0.6s ease;
+        }
+        .mood-header .mood-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+        .mood-header h2 {
+            font-size: 1.6rem; font-weight: 700;
+        }
+        .mood-header h2 span {
+            background: linear-gradient(135deg, #ff6b6b, #ffe66d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .mood-header p { color: rgba(255,255,255,0.45); margin-top: 6px; font-size: 0.9rem; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Primary card */
+        .primary-card {
+            background: linear-gradient(135deg, rgba(255,107,107,0.12), rgba(238,90,36,0.08));
+            border: 1px solid rgba(255,107,107,0.2);
+            border-radius: 24px;
+            padding: 36px;
+            text-align: center;
+            margin-bottom: 24px;
+            animation: fadeUp 0.6s ease 0.1s both;
+            position: relative;
+            overflow: hidden;
+        }
+        .primary-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,107,107,0.1) 0%, transparent 50%);
+            animation: shimmer 6s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+        .primary-card .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(255,107,107,0.2);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ff6b6b;
+            margin-bottom: 14px;
+            position: relative;
+        }
+        .primary-card .food-name {
+            font-size: 2rem;
+            font-weight: 800;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .primary-card .confidence {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            position: relative;
+        }
+        .primary-card .confidence strong { color: #4ecdc4; }
+        .primary-card .category-tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 14px;
+            background: rgba(78,205,196,0.15);
+            border: 1px solid rgba(78,205,196,0.2);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #4ecdc4;
+            position: relative;
+        }
+
+        /* Alternatives */
+        .alt-section {
+            margin-bottom: 24px;
+            animation: fadeUp 0.6s ease 0.2s both;
+        }
+        .alt-section h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 12px;
+        }
+        .alt-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .alt-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .alt-card:hover {
+            border-color: rgba(255,230,109,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .alt-card .alt-icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .alt-card .alt-name { font-weight: 700; font-size: 0.95rem; }
+        
+        .food-sticker {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4.5rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .alt-food-sticker {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        /* Drink */
+        .drink-card {
+            background: rgba(78,205,196,0.08);
+            border: 1px solid rgba(78,205,196,0.15);
+            border-radius: 18px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            animation: fadeUp 0.6s ease 0.3s both;
+        }
+        .drink-card .drink-icon { font-size: 2rem; }
+        .drink-card .drink-info .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+        }
+        .drink-card .drink-info .name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #4ecdc4;
+        }
+
+        /* Execution time */
+        .exec-time {
+            text-align: center;
+            color: rgba(255,255,255,0.25);
+            font-size: 0.75rem;
+            margin-bottom: 24px;
+            animation: fadeUp 0.6s ease 0.35s both;
+        }
+
+        /* Rating section */
+        .rating-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            animation: fadeUp 0.6s ease 0.4s both;
+        }
+        .rating-card h4 {
+            font-size: 1rem;
+            margin-bottom: 18px;
+            color: rgba(255,255,255,0.7);
+        }
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .star-input { display: none; }
+        .star-label {
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            filter: grayscale(1) brightness(0.5);
+        }
+        .star-label:hover,
+        .star-input:checked ~ .stars-wrapper .star-label,
+        .star-label.active {
+            filter: none;
+            transform: scale(1.15);
+        }
+        .rate-btn {
+            padding: 14px 40px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #4ecdc4, #44b8a8);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(78,205,196,0.3);
+        }
+        .rate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(78,205,196,0.4);
+        }
+        .try-again {
+            display: inline-block;
+            margin-top: 14px;
+            color: rgba(255,255,255,0.4);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s;
+        }
+        .try-again:hover { color: #fff; }
+
+        @media (max-width: 600px) {
+            .alt-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="brand">🍔 Moodie Foodie</div>
+        <div class="nav-right">
+            <a href="/dashboard" class="back-btn">← Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="main">
+        {% set mood_emojis = {'Happy':'😊', 'Sad':'😢', 'Stressed':'😰', 'Angry':'😠', 'Excited':'🤩', 'Bored':'😐', 'Anxious':'😟', 'Romantic':'🥰'} %}
+
+        <div class="mood-header">
+            <div class="mood-emoji">{{ mood_emojis.get(results.mood, '🙂') }}</div>
+            <h2>Feeling <span>{{ results.mood }}</span>? We've got you!</h2>
+            <p>Here's what our AI recommends for {{ username }}</p>
+        </div>
+
+        <!-- Primary Recommendation -->
+        <div class="primary-card">
+            <div class="badge">⭐ Top Pick</div>
+            <div class="food-sticker">{{ results.primary_emoji }}</div>
+            <div class="food-name">{{ results.primary }}</div>
+            <div class="confidence" style="margin-top: 12px;">
+                Model confidence: <strong>{{ results.confidence }}%</strong>
+            </div>
+            <div class="category-tag">{{ results.category }} Food</div>
+        </div>
+
+        <!-- Alternatives -->
+        <div class="alt-section">
+            <h4>🍽️ More options for you</h4>
+            <div class="alt-grid">
+                {% for alt in results.alternatives %}
+                <div class="alt-card">
+                    <div class="alt-food-sticker">{{ alt.emoji }}</div>
+                    <div class="alt-name">{{ alt.name }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Drink -->
+        <div class="drink-card">
+            <div class="drink-icon">🥤</div>
+            <div class="drink-info">
+                <div class="label">Pair it with</div>
+                <div class="name">{{ results.drink }}</div>
+            </div>
+        </div>
+
+        <div class="exec-time">
+            ⚡ Predicted in {{ results.exec_time }}s
+        </div>
+
+        <!-- Rating -->
+        <div class="rating-card">
+            <h4>How good is this recommendation?</h4>
+            <form method="POST">
+                <div class="stars" id="starsContainer">
+                    {% for i in range(1, 6) %}
+                    <span class="star-label" data-value="{{ i }}" onclick="setRating({{ i }})">⭐</span>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="rating" id="ratingInput" value="3">
+                <button type="submit" class="rate-btn">Submit Rating</button>
+            </form>
+            <a href="/dashboard" class="try-again">← Try another mood</a>
+        </div>
+    </div>
+
+    <script>
+        function setRating(val) {
+            document.getElementById('ratingInput').value = val;
+            const stars = document.querySelectorAll('.star-label');
+            stars.forEach((s, i) => {
+                if (i < val) {
+                    s.style.filter = 'none';
+                    s.style.transform = 'scale(1.15)';
+                } else {
+                    s.style.filter = 'grayscale(1) brightness(0.5)';
+                    s.style.transform = 'scale(1)';
+                }
+            });
+        }
+        // Default to 3 stars
+        setRating(3);
+    </script>
+</body>
+</html>
+
+--- END OF FILE: templates/results.html ---
+================================================================
+
+--- START OF FILE: README.md ---
+# Moodie Foodie 🍔🧠
+
+A standalone desktop application that recommends food based on your current mood and taste preferences using Machine Learning.
+
+## 🚀 Features
+- **Native Desktop App**: Runs in a dedicated window using `flaskwebgui`.
+- **Role-Based Access**: Separate portals for Users and Admins.
+- **ML Engine**: Random Forest model trained on mood, personality, and diet.
+- **Smart Logic**: 
+  - Strictly filters by cuisine (e.g., Indian, Chinese).
+  - Recommends non-sweet drinks for low-sugar preferences.
+- **Data Export**: Automatically updates `users_data.csv` on every signup.
+- **Privacy**: Includes a password visibility toggle (eye icon).
+
+## 🔑 Admin Credentials
+- **Username**: `admin`
+- **Password**: `sricharan3103`
+
+## 📁 Project Structure
+- `app.py`: Main Flask application and UI controller.
+- `moodie_engine.py`: Recommendation logic and ML model training.
+- `database.py`: Database connection and auto-export logic.
+- `templates/`: HTML UI files.
+- `static/`: Styling assets.
+- `moodie_foodie.db`: Local SQLite database.
+
+## 🛠️ How to Run
+1. **Standalone**: Run `dist/app.exe` directly.
+2. **From Source**: 
+   - Install dependencies: `pip install flask flaskwebgui scikit-learn pandas numpy`
+   - Run: `python app.py`
+
+---
+*Created with love for great food and better moods!*
+
+--- END OF FILE: README.md ---
+================================================================
