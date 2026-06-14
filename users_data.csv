@@ -1,0 +1,3 @@
+id,username,password,age,personality,diet_type,spice_level,sweet_tooth,cuisine_pref,health_conscious,allergies,role,created_at
+1,admin,admin123,30,Adventurous,Non-Vegetarian,3,3,Continental,0,,admin,2026-06-14 08:48:36
+2,bhanu,bhanu9398,24,Calm,Non-Vegetarian,5,1,Indian,0,no,user,2026-06-14 08:51:01
